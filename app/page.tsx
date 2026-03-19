@@ -9,7 +9,7 @@ export default function Home() {
   const [price, setPrice] = useState("");
 
   const connectWallet = async () => {
-    if (typeof windows !=="undefined" && windows.ethereum) {
+    if (typeof window !=="undefined" && window.ethereum) {
     const accounts = await window.ethereum.request({
       method: "eth_requestAccounts",
     });
