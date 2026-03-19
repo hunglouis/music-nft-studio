@@ -9,16 +9,20 @@ export default function Home() {
   const [price, setPrice] = useState("");
 
   const connectWallet = async () => {
-    if (typeof window !=="undefined" && (window as any).ethereum) {
-    const accounts = await (window as any).ethereum.request({
-      method: "eth_requestAccounts",
-    });
-    setAccount(accounts[0]);
-  } else {
-    alert("Vui lòng cài MetaMask");
-  }
-};   
-
+    // Sửa 'windows' thành 'window' và thêm 'as any'
+    if (typeof window !== "undefined" && (window as any).ethereum) {
+        try {
+            const accounts = await (window as any).ethereum.request({
+                method: "eth_requestAccounts",
+            });
+            setAccount(accounts[0]);
+        } catch (error) {
+            console.error("Lỗi kết nối ví:", error);
+        }
+    } else {
+        alert("Vui lòng cài MetaMask");
+    }
+};
   const mintNFT = async () => {
     if (typeof window === "undefined") return;
     const provider = new ethers.BrowserProvider((window as any).ethereum);
