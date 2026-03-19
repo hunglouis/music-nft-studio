@@ -14,7 +14,7 @@ export default function Home() {
       method: "eth_requestAccounts",
     });
     setAccount(accounts[0]);
-  };else {
+  } else {
     alert("Vui lòng cài MetaMask");
   }
 };   
