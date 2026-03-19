@@ -9,7 +9,7 @@ export default function Home() {
   const [price, setPrice] = useState("");
 
   const connectWallet = async () => {
-    if (typeof window !=="undefined" && window.ethereum) {
+    if (typeof windows !=="undefined" && windows.ethereum) {
     const accounts = await window.ethereum.request({
       method: "eth_requestAccounts",
     });
@@ -20,8 +20,8 @@ export default function Home() {
 };   
 
   const mintNFT = async () => {
-    if (typeof window === "undefined") return;
-    const provider = new ethers.BrowserProvider(window.ethereum);
+    if (typeof windows === "undefined") return;
+    const provider = new ethers.BrowserProvider(windows.ethereum);
     const signer = await provider.getSigner();
 
     const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
