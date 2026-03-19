@@ -9,13 +9,18 @@ export default function Home() {
   const [price, setPrice] = useState("");
 
   const connectWallet = async () => {
+    if (typeof window !=="undefined" && window.ethereum) {
     const accounts = await window.ethereum.request({
       method: "eth_requestAccounts",
     });
     setAccount(accounts[0]);
-  };
+  };else {
+    alert("Vui lòng cài MetaMask");
+  }
+};   
 
   const mintNFT = async () => {
+    if (typeof window === "undefined") return;
     const provider = new ethers.BrowserProvider(window.ethereum);
     const signer = await provider.getSigner();
 
