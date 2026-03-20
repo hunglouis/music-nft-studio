@@ -1,12 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   typescript: {
-    // Ép Next.js bỏ qua lỗi TypeScript để hoàn tất bản Build
+    // Ép Next.js lờ đi lỗi TypeScript bên ngoài để hoàn tất bản Build
     ignoreBuildErrors: true,
   },
   eslint: {
+    // Bỏ qua lỗi ESLint nếu có
     ignoreDuringBuilds: true,
   },
 };
 
-export default nextConfig;
+module.exports = nextConfig;
