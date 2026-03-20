@@ -22,10 +22,10 @@
     "app/**/*.tsx"
   ],
   "exclude": [
-    "node_modules",
-    "C:/**", 
-    "D:/**",
-    "/MountEFI/**",
-    "**/*.xml"
+  "node_modules",
+  "/MountEFI/**",
+  "C:/**",
+  "**/*.xml"
+  
   ]
 }

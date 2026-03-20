@@ -1,11 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   typescript: {
-    // Bỏ qua lỗi TypeScript khi build để nó không bị dừng giữa chừng
+    // Ép Next.js bỏ qua lỗi TypeScript để hoàn tất bản Build
     ignoreBuildErrors: true,
   },
   eslint: {
-    // Bỏ qua lỗi ESLint khi build
     ignoreDuringBuilds: true,
   },
 };
