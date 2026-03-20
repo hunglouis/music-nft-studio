@@ -4,65 +4,62 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ethers } from "ethers";
+import { createClient } from "@supabase/supabase-js";
 
-// ⚠️ SET YOUR PINATA JWT HERE
+// CONFIG
 const PINATA_JWT = "YOUR_PINATA_JWT";
+const SUPABASE_URL = "YOUR_SUPABASE_URL";
+const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
 
-export default function MusicNFTStudioPro() {
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+export default function MusicNFTMarketplace() {
+  const [user, setUser] = useState(null);
   const [account, setAccount] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const [minting, setMinting] = useState(false);
-
-  const [audioFile, setAudioFile] = useState(null);
-  const [videoFile, setVideoFile] = useState(null);
-
-  const [ipfsData, setIpfsData] = useState({
-    metadata: "",
-    audio: "",
-    video: "",
-  });
-
-  const [song, setSong] = useState({
-    title: "",
-    lyrics: "",
-    description: "",
-  });
-
   const [songs, setSongs] = useState([]);
 
+  const [song, setSong] = useState({ title: "", description: "", price: "" });
+  const [audioFile, setAudioFile] = useState(null);
+
   useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem("songs") || "[]");
-    setSongs(saved);
+    supabase.auth.getUser().then(({ data }) => setUser(data.user));
+    loadSongs();
   }, []);
 
-  const saveSong = () => {
-    const newSongs = [...songs, song];
-    setSongs(newSongs);
-    localStorage.setItem("songs", JSON.stringify(newSongs));
+  const signIn = async () => {
+    await supabase.auth.signInWithOtp({ email: prompt("Email:") });
+    alert("Check email to login");
   };
 
-  // 🔗 CONNECT WALLET
+  const loadSongs = async () => {
+    const { data } = await supabase.from("songs").select("*");
+    setSongs(data || []);
+  };
+
+  const saveSong = async () => {
+    await supabase.from("songs").insert([
+      {
+        title: song.title,
+        description: song.description,
+        price: song.price,
+        user_id: user.id,
+      },
+    ]);
+    loadSongs();
+  };
+
   const connectWallet = async () => {
-    if (window.ethereum) {
-      const accounts = await window.ethereum.request({
-        method: "eth_requestAccounts",
-      });
-      setAccount(accounts[0]);
-    } else {
-      alert("Install MetaMask");
-    }
+    const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+    setAccount(accounts[0]);
   };
 
-  // 📤 Upload file to IPFS
   const uploadFile = async (file) => {
     const formData = new FormData();
     formData.append("file", file);
 
     const res = await fetch("https://api.pinata.cloud/pinning/pinFileToIPFS", {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${PINATA_JWT}`,
-      },
+      headers: { Authorization: `Bearer ${PINATA_JWT}` },
       body: formData,
     });
 
@@ -70,122 +67,80 @@ export default function MusicNFTStudioPro() {
     return `https://gateway.pinata.cloud/ipfs/${data.IpfsHash}`;
   };
 
-  // 🚀 FULL 1-CLICK PROCESS
-  const mintAll = async () => {
-    if (!account) return alert("Connect wallet first");
-    if (!audioFile) return alert("Upload audio file");
+  const mintAndList = async () => {
+    const audioUrl = await uploadFile(audioFile);
 
-    try {
-      setUploading(true);
+    const metadata = {
+      name: song.title,
+      description: song.description,
+      animation_url: audioUrl,
+    };
 
-      // 1. Upload audio
-      const audioUrl = await uploadFile(audioFile);
+    const metaRes = await fetch("https://api.pinata.cloud/pinning/pinJSONToIPFS", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${PINATA_JWT}`,
+      },
+      body: JSON.stringify(metadata),
+    });
 
-      // 2. Upload video (optional)
-      let videoUrl = "";
-      if (videoFile) {
-        videoUrl = await uploadFile(videoFile);
-      }
+    const metaData = await metaRes.json();
+    const metadataUrl = `https://gateway.pinata.cloud/ipfs/${metaData.IpfsHash}`;
 
-      // 3. Create metadata
-      const metadata = {
-        name: song.title,
-        description: song.description,
-        image: videoUrl || audioUrl,
-        animation_url: videoUrl || audioUrl,
-        attributes: [
-          { trait_type: "Genre", value: "Boston" },
-          { trait_type: "Mood", value: "Sentimental" }
-        ]
-      };
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
 
-      // 4. Upload metadata
-      const metaRes = await fetch("https://api.pinata.cloud/pinning/pinJSONToIPFS", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${PINATA_JWT}`,
-        },
-        body: JSON.stringify(metadata),
-      });
+    const contractAddress = "YOUR_CONTRACT_ADDRESS";
+    const abi = [
+      "function mint(address to, string memory tokenURI) public returns (uint256)",
+    ];
 
-      const metaData = await metaRes.json();
-      const metadataUrl = `https://gateway.pinata.cloud/ipfs/${metaData.IpfsHash}`;
+    const contract = new ethers.Contract(contractAddress, abi, signer);
 
-      setIpfsData({ metadata: metadataUrl, audio: audioUrl, video: videoUrl });
+    const tx = await contract.mint(account, metadataUrl);
+    await tx.wait();
 
-      setUploading(false);
-      setMinting(true);
+    await supabase.from("songs").update({ nft_url: metadataUrl }).eq("title", song.title);
 
-      // 5. Mint NFT
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
+    alert("NFT Minted & Listed!");
+    loadSongs();
+  };
 
-      const contractAddress = "YOUR_CONTRACT_ADDRESS";
-      const abi = [
-        "function mint(address to, string memory tokenURI) public returns (uint256)",
-      ];
-
-      const contract = new ethers.Contract(contractAddress, abi, signer);
-
-      const tx = await contract.mint(account, metadataUrl);
-      await tx.wait();
-
-      setMinting(false);
-
-      alert("🎉 NFT Minted Successfully!");
-    } catch (err) {
-      console.error(err);
-      alert("Process failed");
-      setUploading(false);
-      setMinting(false);
-    }
+  const buyNFT = async (item) => {
+    alert("Implement smart contract payment here (next step)");
   };
 
   return (
     <div className="p-6 grid gap-6">
-      <h1 className="text-3xl font-bold">🚀 Music NFT Studio Pro</h1>
+      <h1 className="text-3xl font-bold">💰 Music NFT Marketplace</h1>
+
+      <Button onClick={signIn}>{user ? user.email : "Login"}</Button>
 
       <Card>
         <CardContent className="p-4 grid gap-4">
-          <h2>1. Song Info</h2>
-          <Input
-            placeholder="Song Title"
-            value={song.title}
-            onChange={(e) => setSong({ ...song, title: e.target.value })}
-          />
-          <Textarea
-            placeholder="Description"
-            value={song.description}
-            onChange={(e) => setSong({ ...song, description: e.target.value })}
-          />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="p-4 grid gap-4">
-          <h2>2. Upload Files</h2>
+          <Input placeholder="Song Title" onChange={(e) => setSong({ ...song, title: e.target.value })} />
+          <Textarea placeholder="Description" onChange={(e) => setSong({ ...song, description: e.target.value })} />
+          <Input placeholder="Price (MATIC)" onChange={(e) => setSong({ ...song, price: e.target.value })} />
           <Input type="file" accept="audio/*" onChange={(e) => setAudioFile(e.target.files[0])} />
-          <Input type="file" accept="video/*" onChange={(e) => setVideoFile(e.target.files[0])} />
+
+          <Button onClick={connectWallet}>Connect Wallet</Button>
+          <Button onClick={mintAndList}>🚀 Mint & List NFT</Button>
         </CardContent>
       </Card>
 
       <Card>
-        <CardContent className="p-4 grid gap-4">
-          <h2>3. Web3 Actions</h2>
-          <Button onClick={connectWallet}>
-            {account ? `Connected: ${account.slice(0, 6)}...` : "Connect Wallet"}
-          </Button>
-
-          <Button onClick={mintAll} disabled={uploading || minting}>
-            {uploading ? "Uploading to IPFS..." : minting ? "Minting NFT..." : "🚀 1-Click Mint NFT"}
-          </Button>
-
-          {ipfsData.metadata && (
-            <div className="text-sm text-green-600">
-              Metadata: {ipfsData.metadata}
+        <CardContent>
+          <h2 className="font-bold">Marketplace</h2>
+          {songs.map((s, i) => (
+            <div key={i} className="border p-3 rounded mb-2">
+              <strong>{s.title}</strong>
+              <p>{s.description}</p>
+              <p>Price: {s.price} MATIC</p>
+              {s.nft_url && <a href={s.nft_url}>View NFT</a>}
+              <Button onClick={() => buyNFT(s)}>Buy</Button>
             </div>
-          )}
+          ))}
         </CardContent>
       </Card>
     </div>
