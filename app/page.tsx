@@ -1,76 +1,104 @@
-"use client";
+import { useState, useEffect } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
-import { useState } from "react";
-import { ethers } from "ethers";
+export default function MusicNFTStudioPro() {
+  const [song, setSong] = useState({
+    title: "",
+    lyrics: "",
+    description: "",
+    metadata: "",
+  });
 
-export default function Home() {
-  const [account, setAccount] = useState("");
-  const [title, setTitle] = useState("");
-  const [price, setPrice] = useState("");
+  const [songs, setSongs] = useState([]);
 
-  const connectWallet = async () => {
-    // Sửa 'windows' thành 'window' và thêm 'as any'
-    if (typeof window !== "undefined" && (window as any).ethereum) {
-        try {
-            const accounts = await (window as any).ethereum.request({
-                method: "eth_requestAccounts",
-            });
-            setAccount(accounts[0]);
-        } catch (error) {
-            console.error("Lỗi kết nối ví:", error);
-        }
-    } else {
-        alert("Vui lòng cài MetaMask");
-    }
-};
-  const mintNFT = async () => {
-    if (typeof window === "undefined") return;
-    const provider = new ethers.BrowserProvider((window as any).ethereum);
-    const signer = await provider.getSigner();
+  // Simulate API save
+  const saveSong = () => {
+    const newSongs = [...songs, song];
+    setSongs(newSongs);
+    localStorage.setItem("songs", JSON.stringify(newSongs));
+  };
 
-    const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
+  useEffect(() => {
+    const saved = JSON.parse(localStorage.getItem("songs") || "[]");
+    setSongs(saved);
+  }, []);
 
-    const abi = [
-      "function mintAndList(string memory tokenURI, uint256 price) public",
-    ];
+  const generateMetadata = () => {
+    const meta = JSON.stringify({
+      title: song.title,
+      description: song.description,
+      artist: "Manh Hung",
+      type: "Music NFT",
+      format: "MP3/MP4",
+      blockchain: "Polygon",
+    }, null, 2);
 
-    const contract = new ethers.Contract(contractAddress, abi, signer);
-
-    const tx = await contract.mintAndList(
-      "https://example.com/metadata.json",
-      ethers.parseEther(price)
-    );
-
-    await tx.wait();
-
-    alert("Mint thành công!");
+    setSong({ ...song, metadata: meta });
   };
 
   return (
-    <div style={{ padding: 40 }}>
-      <h1>🎼 Music NFT Studio</h1>
+    <div className="p-6 grid gap-6">
+      <h1 className="text-3xl font-bold">🚀 Music NFT Studio Pro</h1>
 
-      <button onClick={connectWallet}>
-        {account ? account : "Connect Wallet"}
-      </button>
+      <Card>
+        <CardContent className="p-4 grid gap-4">
+          <h2 className="font-semibold">1. Song Studio</h2>
+          <Input
+            placeholder="Song Title"
+            value={song.title}
+            onChange={(e) => setSong({ ...song, title: e.target.value })}
+          />
+          <Textarea
+            placeholder="Lyrics"
+            value={song.lyrics}
+            onChange={(e) => setSong({ ...song, lyrics: e.target.value })}
+          />
+          <Button onClick={saveSong}>Save Song</Button>
+        </CardContent>
+      </Card>
 
-      <br /><br />
+      <Card>
+        <CardContent className="p-4 grid gap-4">
+          <h2 className="font-semibold">2. NFT Description</h2>
+          <Textarea
+            placeholder="Write description..."
+            value={song.description}
+            onChange={(e) => setSong({ ...song, description: e.target.value })}
+          />
+          <Button onClick={generateMetadata}>Generate Metadata</Button>
+        </CardContent>
+      </Card>
 
-      <input
-        placeholder="Tên bài hát"
-        onChange={(e) => setTitle(e.target.value)}
-      />
+      <Card>
+        <CardContent className="p-4 grid gap-4">
+          <h2 className="font-semibold">3. Metadata (JSON)</h2>
+          <Textarea value={song.metadata} readOnly />
+        </CardContent>
+      </Card>
 
-      <br /><br />
+      <Card>
+        <CardContent className="p-4 grid gap-4">
+          <h2 className="font-semibold">4. NFT Actions</h2>
+          <Button>Connect Wallet</Button>
+          <Button>Mint NFT</Button>
+          <Button>Upload to IPFS</Button>
+        </CardContent>
+      </Card>
 
-      <input
-        placeholder="Giá (MATIC)"
-        onChange={(e) => setPrice(e.target.value)}
-      />
-
-      <br /><br />
-
-      <button onClick={mintNFT}>🚀 Mint NFT</button>
+      <Card>
+        <CardContent className="p-4 grid gap-4">
+          <h2 className="font-semibold">5. My Songs</h2>
+          {songs.map((s, i) => (
+            <div key={i} className="border p-2 rounded">
+              <strong>{s.title}</strong>
+              <p className="text-sm">{s.description}</p>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
     </div>
   );
 }
