@@ -52,6 +52,17 @@ export default function MusicNFTStudio() {
     setToast({ show: true, message: msg });
     setTimeout(() => setToast({ show: false, message: '' }), 4000);
   };
+  const handleBuyNFT = async (nft) => {
+  const price = parseFloat(nft.price); // Ví dụ: 100
+  const platformFee = price * 0.025;   // 2.5% = 2.5 MATIC
+  const sellerProceeds = price - platformFee; // 97.5% = 97.5 MATIC
+
+  console.log(`Chủ sàn (Hùng Louis) nhận: ${platformFee} MATIC`);
+  console.log(`Người bán nhận: ${sellerProceeds} MATIC`);
+  
+  // Sau này khi tích hợp Smart Contract, 
+  // hệ thống sẽ tự động gửi tiền về 2 địa chỉ ví này cùng lúc.
+  };
 
   const handleMintOneClick = async () => {
     if (!selectedFile || !nftData.name) return showNotification("⚠️ Vui lòng nhập tên và chọn file!");
