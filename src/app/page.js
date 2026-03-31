@@ -72,7 +72,7 @@ export default function MusicNFTStudio() {
       const formData = new FormData();
       formData.append('file', selectedFile[0]);
 	 // Dòng 75: Phải có /pinning/pinFileToIPFS ở cuối link
-	const res = await axios.post("https://pinata.cloud", formData, {
+	const res = await axios.post(`https://api.pinata.cloud/pinning/pinFileToIPFS`, formData, {
   headers: {
     'Content-Type': 'multipart/form-data',
     'pinata_api_key': process.env.NEXT_PUBLIC_PINATA_KEY.trim(),
@@ -86,8 +86,8 @@ export default function MusicNFTStudio() {
           description: nftData.desc,
           hunglouis_id: autoCID, 
 		  creator_email: authEmail, // <--- LƯU EMAIL NGƯỜI ĐĂNG
-          image_url: `https://gateway.pinata.cloud{autoCID}`,
-		  status: 'pending', // Hoặc 'active' nếu bạn muốn duyệt thủ công
+          image_url: `https://Gateway.pinata.cloud/ipfs/${autoCID}`,
+		  status: 'active', // Hoặc 'pending' nếu bạn muốn duyệt thủ công
           artist: nftData.artist,
           price: nftData.price,
           created_at: new Date()
