@@ -7,10 +7,12 @@ import axios from 'axios';
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  
 );
 
 export default function MusicNFTStudio() {
   // --- CÁC BIẾN TRẠNG THÁI (STATE) ---
+  const PLATFORM_ADMIN_WALLET = process.env.NEXT_PUBLIC_ADMIN_WALLET;
   const [status, setStatus] = useState('Hệ thống sẵn sàng');
   const [nfts, setNfts] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -21,6 +23,7 @@ export default function MusicNFTStudio() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authEmail, setAuthEmail] = useState('');
   const [manualWallet, setManualWallet] = useState('');
+  const [walletAddress, setWalletAddress] = useState('');
   const [toast, setToast] = useState({ show: false, message: '' });
 
   // Tự động tải dữ liệu khi mở trang
@@ -31,7 +34,20 @@ export default function MusicNFTStudio() {
     const { data } = await supabase.from('hunglouis').select('*').order('created_at', { ascending: false });
     setNfts(data || []);
   };
-
+  // Hàm tăng lượt nghe tự động
+  const incrementPlayCount = async (nft) => {
+  const { error } = await supabase
+    .from('hunglouis')
+    .update({ views: (nft.views || 0) + 1 })
+    .eq('id', nft.id);
+  if (!error) fetchNFTs(); // Load lại để cập nhật con số trên màn hình
+  };
+	// Hàm mở Zalo chat (Cấu trúc chuẩn 2024)
+  const openZaloChat = (nft) => {
+  const sdt = "0778018931"; // <--- THAY SỐ CỦA BẠN VÀO ĐÂY
+  const message = `Tôi quan tâm bản nhạc: ${nft.name} trên sàn Mạnh Hùng NFT.`;
+  window.open(`https://zalo.me{sdt}?text=${encodeURIComponent(message)}`, '_blank');
+  };
   const showNotification = (msg) => {
     setToast({ show: true, message: msg });
     setTimeout(() => setToast({ show: false, message: '' }), 4000);
@@ -72,12 +88,12 @@ export default function MusicNFTStudio() {
 
   const connectMetamask = async () => {
     if (window.ethereum) {
-      try {
-        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        setManualWallet(accounts[0]);
-        showNotification("🦊 Đã kết nối ví Metamask!");
-      } catch (err) { showNotification("❌ Từ chối kết nối!"); }
-    } else { alert("Vui lòng cài Metamask!"); }
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        setWalletAddress(accounts[0]); // Tự động điền vào ô input
+        showNotification("🦊 Đã kết nối ví thành công!");
+    } else {
+		alert("Vui lòng cài Metamask!"); 
+	}
   };
 
   const handleRegisterUser = async () => {
@@ -91,7 +107,7 @@ export default function MusicNFTStudio() {
   return (
     <div style={styles.container}>
       <style dangerouslySetInnerHTML={{ __html: `
-        .nft-card-hover:hover { transform: translateY(-10px); box-shadow: 0 20px 40px rgba(99, 102, 241, 0.3); border-color: #6366f1 !important; }
+        .nft-card-hover:hover { transform: translateY(-10px); background-color: rgba(99, 102, 241, 0.05) !important; box-shadow: 0 20px 40px rgba(99, 102, 241, 0.3); border-color: #6366f1 !important; }
       `}} />
 
       {/* NAVBAR */}
@@ -102,7 +118,7 @@ export default function MusicNFTStudio() {
           <div style={styles.authGroup}>
             <button style={styles.btnNavText} onClick={() => setShowAuthModal(true)}>📧 Login</button>
             <div style={styles.divider}></div>
-            <button style={styles.btnConnect} onClick={connectMetamask}>🦊 Connect</button>
+            <button style={styles.btnConnect} onClick={(connectMetamask)}>🦊 Connect</button>
           </div>
         </div>
       </nav>
@@ -110,6 +126,15 @@ export default function MusicNFTStudio() {
       {/* MINT SECTION */}
       <section style={styles.mintSection}>
         <div style={styles.card}>
+			<div style={styles.policyBox}>
+  <p>🛡️ <b>Quy định sàn:</b></p>
+  <ul style={{fontSize: '11px', color: '#888', textAlign: 'left'}}>
+    <li>Phí duy trì hệ thống: <b>2.5%</b> (Trừ trực tiếp khi giao dịch thành công).</li>
+    <li>Phí tác quyền nghệ sĩ: <b>5%</b> cho mọi giao dịch thứ cấp.</li>
+    <li>Nghệ sĩ tự chịu trách nhiệm về bản quyền âm nhạc đã tải lên.</li>
+  </ul>
+</div>
+
           <h2 style={styles.cardTitle}>Phát hành NFT "One-Click"</h2>
           <input style={styles.input} placeholder="Tên bản nhạc" onChange={e => setNftData({...nftData, name: e.target.value})} />
           <textarea style={{...styles.input, height: '60px', marginTop: '10px'}} placeholder="Mô tả" onChange={e => setNftData({...nftData, desc: e.target.value})} />
@@ -117,33 +142,93 @@ export default function MusicNFTStudio() {
              <input type="number" style={styles.input} placeholder="Giá MATIC" onChange={e => setNftData({...nftData, price: e.target.value})} />
              <input type="file" onChange={e => setSelectedFile(e.target.files)} />
           </div>
+		  <div style={styles.fileUploadWrapper}>
+  <label htmlFor="file-upload" style={styles.customFileBtn}>
+    📁 {selectedFile ? selectedFile[0].name : "Chọn bản nhạc của bạn"}
+  </label>
+  <input 
+    id="file-upload" 
+    type="file" 
+    style={{ display: 'none' }} // Ẩn cái nút mặc định xấu xí đi
+    onChange={e => setSelectedFile(e.target.files)} 
+  />
+</div>
+
           <button onClick={handleMintOneClick} disabled={loading} style={loading ? styles.btnDisabled : styles.btnMint}>
             {loading ? 'ĐANG XỬ LÝ...' : 'PHÁT HÀNH NGAY'}
           </button>
           <p style={styles.statusText}>{status}</p>
         </div>
+		
       </section>
+		{/* KHU VỰC DÀNH CHO NGHỆ SĨ */}
+	  <section style={styles.mintSection}>
+    {authEmail ? (
+    <div style={styles.card}>
+      <h2 style={styles.cardTitle}>🚀 Đăng tác phẩm lên Sàn</h2>
+      <p style={styles.authInfo}>Đang đăng bài với tư cách: <b>{authEmail}</b></p>
+      
+      <input style={styles.input} placeholder="Tên bản nhạc..." onChange={e => setNftData({...nftData, name: e.target.value})} />
+      <input type="number" style={styles.input} placeholder="Giá niêm yết (MATIC)" onChange={e => setNftData({...nftData, price: e.target.value})} />
+      
+      <div style={styles.uploadBox}>
+        <input type="file" id="file-upload" style={{display: 'none'}} onChange={e => setSelectedFile(e.target.files)} />
+        <label htmlFor="file-upload" style={styles.fileLabel}>
+          {selectedFile ? `✅ ${selectedFile.name}` : "📁 Chọn file nhạc/video (Max 50MB)"}
+        </label>
+      </div>
+
+      <button onClick={handleMintOneClick} style={styles.btnMint}>XUẤT BẢN LÊN SÀN GIAO DỊCH</button>
+    </div>
+    ) : (
+    <div style={styles.loginInvite}>
+      <h3>🎤 Bạn muốn bán nhạc trên sàn của chúng tôi?</h3>
+      <p>Vui lòng Đăng nhập để tải tác phẩm của bạn lên cộng đồng.</p>
+      <button style={styles.btnConnect} onClick={() => setShowAuthModal(true)}>Đăng nhập ngay</button>
+    </div>
+    )}
+	  </section>
 
       {/* GRID MARKETPLACE */}
       <div style={styles.grid}>
         {nfts.map((nft) => (
           <div key={nft.id} style={styles.nftCard} className="nft-card-hover">
             <div style={styles.imageWrapper}>
-              <img src={nft.image_url} style={styles.nftImage} alt="NFT" />
-              <div style={styles.playOverlay} onClick={() => setCurrentTrack(nft)}>
-                <div style={styles.playIcon}>▶</div>
-              </div>
+              <img src={nft.image_url} style={styles.nftImage} />
+              <div style={styles.playOverlay} onClick={() => { setCurrentTrack(nft); incrementPlayCount(nft); }}>
+				  <div style={styles.playIcon}>▶</div>
+			  </div>
             </div>
             <div style={styles.nftContent}>
               <h4 style={styles.nftTitle}>{nft.name}</h4>
-              <p style={styles.nftArtist}>By {nft.artist}</p>
-              <div style={styles.nftFooter}>
+              <p style={styles.nftArtist}>Nghệ sĩ: {nft.creator_email || "Mạnh Hùng"}</p>
+              
+	    	   <div style={styles.nftStats}>
+				  <span>🎧 {nft.views || 0} lượt nghe</span>
+				  <span style={styles.priceText}>{nft.price || '0.01'} MATIC</span>
+			   </div>
+			  
+			  <div style={styles.nftFooter}>
                 <div style={styles.priceContainer}>
                    <span style={styles.priceLabel}>Giá</span>
                    <div style={styles.priceValue}>{nft.price || '0.01'} MATIC</div>
                 </div>
+				<button style={styles.btnZalo} onClick={() => openZaloChat(nft)}>
+					💬 Hỏi mua qua Zalo
+				</button>
                 <button style={styles.btnBuySmall} onClick={() => setCurrentTrack(nft)}>Sở hữu</button>
-              </div>
+				<button 
+					style={styles.btnZalo} 
+					onClick={() => {
+						const sdt = "0778018931"; // <-- THAY SỐ CỦA BẠN VÀO ĐÂY (Viết liền, không cách)
+						// Cấu pháp link Zalo cá nhân chuẩn nhất
+						window.open(`https://zalo.me{sdt}?text=${loiNhan}`, '_blank'); 
+					 }}
+				>
+					  💬 Hỏi giá qua Zalo
+				</button>
+
+			  </div>
             </div>
           </div>
         ))}
@@ -168,10 +253,15 @@ export default function MusicNFTStudio() {
         <div style={styles.modalOverlay} onClick={() => setShowAuthModal(false)}>
           <div style={styles.modalContent} onClick={e => e.stopPropagation()}>
             <h2 style={styles.modalTitle}>Ghi danh Thành viên</h2>
-            <input type="email" placeholder="Email của bạn" style={styles.modalInput} onChange={e => setAuthEmail(e.target.value)} />
-            <input type="text" placeholder="Địa chỉ ví Metamask" style={{...styles.modalInput, marginTop: '10px'}} value={manualWallet} onChange={e => setManualWallet(e.target.value)} />
+            <input type="email" placeholder="Email của bạn" style={styles.modalInput} onChange={e => setAuthEmail(e.target.value)}
+			/>
+           
+			<input type="text" placeholder="0x... hoặc kết nối ví" style={{...styles.modalInput, marginTop: '10px'}}
+			value={walletAddress} //Kết nối với biến
+			onChange={(e) => setWalletAddress(e.target.value)} //Cho phép gõ thủ công
+			/>
             <button style={styles.btnActionPrimary} onClick={handleRegisterUser}>HOÀN TẤT ĐĂNG KÝ</button>
-            <button style={{background: 'none', border: 'none', color: '#555', marginTop: '15px', cursor: 'pointer'}} onClick={() => setShowAuthModal(false)}>Để sau</button>
+            <button style={{background: 'none', border: 'none', color: '#555', marginTop: '15px', cursor: 'pointer'}} onClick={(connectMetamask) => setShowAuthModal(false)}>Để sau</button>
           </div>
         </div>
       )}
@@ -234,5 +324,77 @@ const styles = {
   btnActionPrimary: { width: '100%', padding: '15px', background: 'linear-gradient(90deg, #6366f1, #a855f7)', border: 'none', borderRadius: '12px', color: '#fff', fontWeight: 'bold', marginTop: '20px', cursor: 'pointer' },
   
   toastContainer: { position: 'fixed', bottom: '100px', right: '30px', backgroundColor: '#6366f1', padding: '15px 25px', borderRadius: '15px', zIndex: 5000 },
-  toastMessage: { color: '#fff', fontWeight: 'bold' }
+  toastMessage: { color: '#fff', fontWeight: 'bold' },
+  btnChat: {
+    padding: '8px 15px',
+    backgroundColor: '#0068ff', // Màu xanh Zalo đặc trưng
+    color: '#fff',
+    border: 'none',
+    borderRadius: '10px',
+    fontSize: '12px',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+    marginTop: '10px',
+    width: '100%',
+    transition: '0.3s',
+  },
+  input: {
+    width: '100%',
+    padding: '14px 20px',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    borderRadius: '14px',
+    color: '#fff',
+    fontSize: '14px',
+    outline: 'none',
+    transition: 'all 0.3s ease',
+    marginBottom: '15px',
+  },
+  customFileBtn: {
+    display: 'block',
+    padding: '12px',
+    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+    border: '2px dashed rgba(99, 102, 241, 0.4)',
+    borderRadius: '14px',
+    color: '#6366f1',
+    textAlign: 'center',
+    cursor: 'pointer',
+    fontWeight: 'bold',
+    marginBottom: '20px',
+    transition: '0.3s',
+  },
+  btnMint: {
+    width: '100%',
+    padding: '16px',
+    background: 'linear-gradient(90deg, #6366f1, #a855f7)', // Gradient rực rỡ
+    color: '#fff',
+    borderRadius: '16px',
+    border: 'none',
+    fontWeight: '800',
+    fontSize: '16px',
+    letterSpacing: '1px',
+    cursor: 'pointer',
+    boxShadow: '0 10px 25px rgba(99, 102, 241, 0.4)',
+    transition: 'all 0.3s ease',
+  },
+  authInfo: { fontSize: '13px', color: '#888', marginBottom: '15px', textAlign: 'center' },
+  uploadBox: { border: '2px dashed #333', borderRadius: '15px', padding: '20px', textAlign: 'center', marginBottom: '15px' },
+  fileLabel: { cursor: 'pointer', color: '#6366f1', fontWeight: 'bold' },
+  loginInvite: { padding: '40px', textAlign: 'center', backgroundColor: '#111', borderRadius: '25px', border: '1px solid #222' },
+  nftStats: { display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#aaa', margin: '15px 0' },
+  priceText: { color: '#6366f1', fontWeight: 'bold', fontSize: '15px' },
+  btnZalo: { width: '100%', padding: '12px', backgroundColor: '#0068ff', color: '#fff', border: 'none', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer' },
+// Thêm vào styles
+  fileInputCustom: {
+    display: 'inline-block',
+    padding: '10px 20px',
+    backgroundColor: '#6366f1',
+    color: '#fff',
+    borderRadius: '10px',
+    cursor: 'pointer',
+    fontWeight: 'bold',
+    marginTop: '10px'
+  },
+
 };
+
