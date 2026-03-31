@@ -7,10 +7,12 @@ import axios from 'axios';
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  
 );
 
 export default function MusicNFTStudio() {
   // --- CÁC BIẾN TRẠNG THÁI (STATE) ---
+  const PLATFORM_ADMIN_WALLET = process.env.NEXT_PUBLIC_ADMIN_WALLET;
   const [status, setStatus] = useState('Hệ thống sẵn sàng');
   const [nfts, setNfts] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -50,6 +52,17 @@ export default function MusicNFTStudio() {
     setToast({ show: true, message: msg });
     setTimeout(() => setToast({ show: false, message: '' }), 4000);
   };
+  const handleBuyNFT = async (nft) => {
+  const price = parseFloat(nft.price); // Ví dụ: 100
+  const platformFee = price * 0.025;   // 2.5% = 2.5 MATIC
+  const sellerProceeds = price - platformFee; // 97.5% = 97.5 MATIC
+
+  console.log(`Chủ sàn (Hùng Louis) nhận: ${platformFee} MATIC`);
+  console.log(`Người bán nhận: ${sellerProceeds} MATIC`);
+  
+  // Sau này khi tích hợp Smart Contract, 
+  // hệ thống sẽ tự động gửi tiền về 2 địa chỉ ví này cùng lúc.
+  };
 
   const handleMintOneClick = async () => {
     if (!selectedFile || !nftData.name) return showNotification("⚠️ Vui lòng nhập tên và chọn file!");
@@ -70,7 +83,9 @@ export default function MusicNFTStudio() {
           name: nftData.name, 
           description: nftData.desc,
           hunglouis_id: autoCID, 
+		  creator_email: authEmail, // <--- LƯU EMAIL NGƯỜI ĐĂNG
           image_url: `https://gateway.pinata.cloud{autoCID}`,
+		  status: 'pending', // Hoặc 'active' nếu bạn muốn duyệt thủ công
           artist: nftData.artist,
           price: nftData.price,
           created_at: new Date()
@@ -124,8 +139,20 @@ export default function MusicNFTStudio() {
       {/* MINT SECTION */}
       <section style={styles.mintSection}>
         <div style={styles.card}>
+			<div style={styles.policyBox}>
+  <p>🛡️ <b>Quy định sàn:</b></p>
+  <ul style={{fontSize: '12px', color: '#888', textAlign: 'left'}}>
+    <li>Phí duy trì hệ thống: <b>2.5%</b> (Trừ trực tiếp khi giao dịch thành công).</li>
+    <li>Phí tác quyền nghệ sĩ: <b>5%</b> cho mọi giao dịch thứ cấp (Còn gọi là Hoa hồng tái bản).</li>
+    <li>Nghệ sĩ tự chịu trách nhiệm về bản quyền âm nhạc đã tải lên.</li>
+  </ul>
+</div>
+
           <h2 style={styles.cardTitle}>Phát hành NFT "One-Click"</h2>
-          <input style={styles.input} placeholder="Tên bản nhạc" onChange={e => setNftData({...nftData, name: e.target.value})} />
+          <p style={{color: '#888', fontSize: '12px', marginBottom: '15px'}}>
+        Đang đăng bài với tư cách: <span style={{color: '#6366f1'}}>{authEmail}</span>
+      </p>
+		  <input style={styles.input} placeholder="Tên bản nhạc" onChange={e => setNftData({...nftData, name: e.target.value})} />
           <textarea style={{...styles.input, height: '60px', marginTop: '10px'}} placeholder="Mô tả" onChange={e => setNftData({...nftData, desc: e.target.value})} />
           <div style={{display: 'flex', gap: '10px', marginTop: '10px'}}>
              <input type="number" style={styles.input} placeholder="Giá MATIC" onChange={e => setNftData({...nftData, price: e.target.value})} />
@@ -145,6 +172,7 @@ export default function MusicNFTStudio() {
 
           <button onClick={handleMintOneClick} disabled={loading} style={loading ? styles.btnDisabled : styles.btnMint}>
             {loading ? 'ĐANG XỬ LÝ...' : 'PHÁT HÀNH NGAY'}
+			TẢI LÊN SÀN GIAO DỊCH
           </button>
           <p style={styles.statusText}>{status}</p>
         </div>
@@ -171,8 +199,8 @@ export default function MusicNFTStudio() {
     </div>
     ) : (
     <div style={styles.loginInvite}>
-      <h3>🎤 Bạn muốn bán nhạc trên sàn của chúng tôi?</h3>
-      <p>Vui lòng Đăng nhập để tải tác phẩm của bạn lên cộng đồng.</p>
+      <h3>🎤 Bạn là nghệ sĩ ? Bạn muốn giới thiệu tác phẩm của mình với các nhà sưu tập, các fan hâm mộ và công chúng. Bạn lo lắng - e ngại, sợ tác quyền của mình bị xâm phạm ?</h3>
+      <p>Hãy đăng ký (tạo tài khoản) bằng Email hoặc ví crypto để tải lên tác phẩm của mình để được tiếp cận, chia sẻ với cộng đồng và tác quyền của bạn sẽ được bảo vệ vĩnh viễn trên blockchain.</p>
       <button style={styles.btnConnect} onClick={() => setShowAuthModal(true)}>Đăng nhập ngay</button>
     </div>
     )}
@@ -373,6 +401,26 @@ const styles = {
   nftStats: { display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#aaa', margin: '15px 0' },
   priceText: { color: '#6366f1', fontWeight: 'bold', fontSize: '15px' },
   btnZalo: { width: '100%', padding: '12px', backgroundColor: '#0068ff', color: '#fff', border: 'none', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer' },
+// Thêm vào styles
+  fileInputCustom: {
+    display: 'inline-block',
+    padding: '10px 20px',
+    backgroundColor: '#6366f1',
+    color: '#fff',
+    borderRadius: '10px',
+    cursor: 'pointer',
+    fontWeight: 'bold',
+    marginTop: '10px'
+  },
+  loginInvite: {
+    textAlign: 'center',
+    padding: '40px',
+    backgroundColor: 'rgba(255,255,255,0.02)',
+    borderRadius: '24px',
+    border: '1px dashed #333',
+    maxWidth: '600px',
+    margin: '0 auto 60px',
+  },
 
 };
 

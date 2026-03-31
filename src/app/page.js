@@ -71,13 +71,15 @@ export default function MusicNFTStudio() {
     try {
       const formData = new FormData();
       formData.append('file', selectedFile[0]);
-      const res = await axios.post("https://api.pinata.cloud", formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          'pinata_api_key': process.env.NEXT_PUBLIC_PINATA_KEY.trim(),
-          'pinata_secret_api_key': process.env.NEXT_PUBLIC_PINATA_SECRET.trim(),
-        }
-      });
+	 // Dòng 75: Phải có /pinning/pinFileToIPFS ở cuối link
+	const res = await axios.post("https://pinata.cloud", formData, {
+  headers: {
+    'Content-Type': 'multipart/form-data',
+    'pinata_api_key': process.env.NEXT_PUBLIC_PINATA_KEY.trim(),
+    'pinata_secret_api_key': process.env.NEXT_PUBLIC_PINATA_SECRET.trim(),
+	}
+  });
+
       const autoCID = res.data.IpfsHash;
       const { error } = await supabase.from('hunglouis').insert([{ 
           name: nftData.name, 
