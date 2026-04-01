@@ -18,22 +18,51 @@ export default function MusicNFTStudio() {
   const [loading, setLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [nftData, setNftData] = useState({ name: '', desc: '', artist: 'Hùng Louis', price: '0.01' });
-  
+  const [transactions, setTransactions] = useState([]);
+
   const [currentTrack, setCurrentTrack] = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authEmail, setAuthEmail] = useState('');
   const [manualWallet, setManualWallet] = useState('');
   const [walletAddress, setWalletAddress] = useState('');
   const [toast, setToast] = useState({ show: false, message: '' });
+  const [totalVisits, setTotalVisits] = useState(0);
 
   // Tự động tải dữ liệu khi mở trang
   useEffect(() => { fetchNFTs(); }, []);
+  useEffect(() => {
+	  // Thêm vào useEffect để lấy dữ liệu
+  const fetchTransactions = async () => {
+  const { data } = await supabase.from('transactions').select('*').order('created_at', { ascending: false }).limit(5);
+  setTransactions(data || []);
+  };
+  const fetchAndIncrementVisits = async () => {
+    // 1. Lấy số hiện tại
+    const { data, error } = await supabase.from('site_stats').select('views').single();
+    const newCount = (data?.views || 0) + 1;
+    setTotalVisits(newCount);
+    // 2. Cập nhật lại số mới
+    await supabase.from('site_stats').update({ views: newCount }).eq('id', 1);
+	};
+  fetchAndIncrementVisits();
+	}, []);
 
   // --- CÁC HÀM XỬ LÝ LOGIC ---
+  const recordTransaction = async (nft, buyerEmail) => {
+	
+  const {error} = await supabase.from('transactions').insert([{
+    nft_name: nft.name,
+    buyer: authEmail || "Khách vãng lai",
+    price: nft.price,
+    type: "Mua nhạc"
+	}]);
+  fetchTransactions(); // Cập nhật danh sách hiển thị
+	};
+
   const fetchNFTs = async () => {
     const { data } = await supabase.from('hunglouis').select('*').order('created_at', { ascending: false });
     setNfts(data || []);
-  };
+	};
   // Hàm tăng lượt nghe tự động
   const incrementPlayCount = async (nft) => {
   const { error } = await supabase
@@ -53,16 +82,32 @@ export default function MusicNFTStudio() {
     setTimeout(() => setToast({ show: false, message: '' }), 4000);
   };
   const handleBuyNFT = async (nft) => {
-  const price = parseFloat(nft.price); // Ví dụ: 100
-  const platformFee = price * 0.025;   // 2.5% = 2.5 MATIC
-  const sellerProceeds = price - platformFee; // 97.5% = 97.5 MATIC
+  // 1. Tính toán phí sàn (Platform Fee)
+  const price = parseFloat(nft.price || 0.01);
+  const platformFee = price * 0.025; // 2.5% phí sàn
+  const sellerProceeds = price - platformFee;
 
-  console.log(`Chủ sàn (Hùng Louis) nhận: ${platformFee} MATIC`);
-  console.log(`Người bán nhận: ${sellerProceeds} MATIC`);
+  showNotification(`💎 Đang khởi tạo giao dịch cho: ${nft.name}`);
   
-  // Sau này khi tích hợp Smart Contract, 
-  // hệ thống sẽ tự động gửi tiền về 2 địa chỉ ví này cùng lúc.
+  // Tạm thời hiện thông báo để bạn thấy phí được chia đúng
+  alert(`Tổng: ${price} MATIC\n- Phí sàn (Hùng Louis): ${platformFee.toFixed(4)}\n- Người bán nhận: ${sellerProceeds.toFixed(4)}`);
+  
+  // Bước tiếp theo sẽ là gọi Smart Contract ở đây
   };
+const handleVietQR = (nft) => {
+  const MY_BANK = "BIDV"; 
+  const MY_ACCOUNT = "3120464627"; // Số tài khoản của Hùng Louis
+  const RATE = 25500; // Tỷ giá MATIC/VNĐ (Bạn có thể điều chỉnh)
+  const amount = Math.round(nft.price * RATE); 
+  const description = encodeURIComponent(`MUA NFT ${nft.name.toUpperCase()}`);
+  
+  // Link tạo mã QR chuẩn Napas
+  const qrUrl = `https://vietqr.io{MY_BANK}-${MY_ACCOUNT}-compact2.jpg?amount=${amount}&addInfo=${description}&accountName=NGUYEN%20MANH%20HUNG`;
+  
+  window.open(qrUrl, '_blank');
+  showNotification("🏦 Đã khởi tạo mã QR thanh toán BIDV!");
+};
+
 
   const handleMintOneClick = async () => {
     if (!selectedFile || !nftData.name) return showNotification("⚠️ Vui lòng nhập tên và chọn file!");
@@ -128,7 +173,11 @@ export default function MusicNFTStudio() {
       {/* NAVBAR */}
       <nav style={styles.navbar}>
         <div style={styles.navLogo}>HÙNG LOUIS <span style={{color: '#6366f1'}}>STUDIO</span></div>
-        <div style={styles.navLinks}>
+        <div style={styles.navStats}>
+  <span style={styles.visitBadge}>👁️ {totalVisits.toLocaleString()} lượt ghé thăm</span>
+</div>
+
+		<div style={styles.navLinks}>
           <span style={styles.navItem}>Khám phá</span>
           <div style={styles.authGroup}>
             <button style={styles.btnNavText} onClick={() => setShowAuthModal(true)}>📧 Login</button>
@@ -171,7 +220,7 @@ export default function MusicNFTStudio() {
     onChange={e => setSelectedFile(e.target.files)} 
   />
 </div>
-
+		  
           <button onClick={handleMintOneClick} disabled={loading} style={loading ? styles.btnDisabled : styles.btnMint}>
             {loading ? 'ĐANG XỬ LÝ...' : 'PHÁT HÀNH NGAY'}
 			TẢI LÊN SÀN GIAO DỊCH
@@ -202,7 +251,7 @@ export default function MusicNFTStudio() {
     ) : (
     <div style={styles.loginInvite}>
       <h3>🎤 Bạn là nghệ sĩ ? Bạn muốn giới thiệu tác phẩm của mình với các nhà sưu tập, các fan hâm mộ và công chúng. Bạn lo lắng - e ngại, sợ tác quyền của mình bị xâm phạm ?</h3>
-      <p>Hãy đăng ký (tạo tài khoản) bằng Email hoặc ví crypto để tải lên tác phẩm của mình để được tiếp cận, chia sẻ với cộng đồng và tác quyền của bạn sẽ được bảo vệ vĩnh viễn trên blockchain.</p>
+      <p>Hãy đăng ký (tạo tài khoản) bằng Email hoặc ví crypto để tải lên tác phẩm của mình để được tiếp cận, chia sẻ với cộng đồng. Tác quyền của bạn sẽ được bảo vệ và lưu truyền vĩnh viễn trên blockchain.</p>
       <button style={styles.btnConnect} onClick={() => setShowAuthModal(true)}>Đăng nhập ngay</button>
     </div>
     )}
@@ -232,10 +281,13 @@ export default function MusicNFTStudio() {
                    <span style={styles.priceLabel}>Giá</span>
                    <div style={styles.priceValue}>{nft.price || '0.01'} MATIC</div>
                 </div>
+				
 				<button style={styles.btnZalo} onClick={() => openZaloChat(nft)}>
 					💬 Hỏi mua qua Zalo
 				</button>
-                <button style={styles.btnBuySmall} onClick={() => setCurrentTrack(nft)}>Sở hữu</button>
+                <button style={styles.btnBuySmall} onClick={() => handleBuyNFT(nft)}>Sở hữu</button>
+				<button style={styles.btnVietQR} onClick={() => handleVietQR(nft)}>🏦 Mua bằng VNĐ (VietQR)</button>
+
 				<button 
 					style={styles.btnZalo} 
 					onClick={() => {
@@ -252,7 +304,25 @@ export default function MusicNFTStudio() {
           </div>
         ))}
       </div>
-
+// Giao diện hiển thị (Dán dưới Grid NFT)
+<section style={styles.historySection}>
+  <h3 style={styles.historyTitle}>💎 Hoạt động giao dịch mới nhất</h3>
+  <div style={styles.historyTable}>
+    {transactions.map((tx) => (
+      <div key={tx.id} style={styles.historyItem}>
+        <div style={styles.txInfo}>
+          <span style={styles.txStatus}>🛍️ Đã bán</span>
+          <b style={styles.txNftName}>{tx.nft_name}</b>
+        </div>
+        <div style={styles.txDetails}>
+          <span style={styles.txBuyer}>Sở hữu bởi: {tx.buyer.substring(0, 8)}...</span>
+          <span style={styles.txPrice}>{tx.price} MATIC</span>
+          <span style={styles.txTime}>{new Date(tx.created_at).toLocaleTimeString()}</span>
+        </div>
+      </div>
+    ))}
+  </div>
+</section>
       {/* FIXED PLAYER */}
       {currentTrack && (
         <div style={styles.fixedPlayer}>
@@ -422,6 +492,78 @@ const styles = {
     border: '1px dashed #333',
     maxWidth: '600px',
     margin: '0 auto 60px',
+  },
+  feeNotice: {
+    marginTop: '20px',
+    padding: '20px',
+    backgroundColor: 'rgba(99, 102, 241, 0.05)',
+    borderRadius: '16px',
+    border: '1px solid rgba(99, 102, 241, 0.2)',
+    textAlign: 'left'
+  },
+  feeList: {
+    fontSize: '12px',
+    color: '#aaa',
+    lineHeight: '1.8',
+    paddingLeft: '20px',
+    listStyleType: 'disc'
+  },
+  visitBadge: {
+    backgroundColor: 'rgba(99, 102, 241, 0.15)',
+    color: '#6366f1',
+    padding: '5px 12px',
+    borderRadius: '20px',
+    fontSize: '12px',
+    fontWeight: 'bold',
+    border: '1px solid rgba(99, 102, 241, 0.3)',
+  },
+  btnVietQR: {
+    width: '100%',
+    padding: '10px',
+    backgroundColor: '#fff',
+    color: '#0056b3', // Màu xanh đặc trưng BIDV
+    borderRadius: '12px',
+    border: '1px solid #0056b3',
+    fontWeight: 'bold',
+    marginTop: '8px',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px'
+  },
+  historySection: { marginTop: '80px', padding: '40px', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '32px', border: '1px solid #222' },
+  historyTitle: { fontSize: '24px', fontWeight: '800', marginBottom: '25px', textAlign: 'center' },
+  historyItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 0', borderBottom: '1px solid #222' },
+  txStatus: { backgroundColor: '#10b981', color: '#fff', padding: '4px 10px', borderRadius: '8px', fontSize: '10px', marginRight: '15px' },
+  txNftName: { fontSize: '16px', color: '#fff' },
+  txPrice: { color: '#6366f1', fontWeight: 'bold', marginLeft: '20px' },
+  txTime: { color: '#555', fontSize: '12px', marginLeft: '20px' },
+  qrModalContent: {
+    backgroundColor: '#111',
+    padding: '30px',
+    borderRadius: '24px',
+    width: '380px',
+    textAlign: 'center',
+    border: '1px solid #333',
+    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+    backdropFilter: 'blur(10px)',
+  },
+  qrHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' },
+  closeBtn: { background: 'none', border: 'none', color: '#fff', fontSize: '20px', cursor: 'pointer' },
+  qrDesc: { fontSize: '14px', color: '#aaa', marginBottom: '20px' },
+  qrImageContainer: { backgroundColor: '#fff', padding: '15px', borderRadius: '15px', marginBottom: '20px' },
+  qrImage: { width: '100%', height: 'auto', display: 'block' },
+  btnDone: { 
+    width: '100%', 
+    padding: '12px', 
+    backgroundColor: '#6366f1', 
+    color: '#fff', 
+    border: 'none', 
+    borderRadius: '12px', 
+    fontWeight: 'bold', 
+    marginTop: '15px',
+    cursor: 'pointer'
   },
 
 };
