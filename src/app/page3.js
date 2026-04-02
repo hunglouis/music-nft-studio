@@ -17,6 +17,7 @@ const supabase = createClient(
 
 export default function MusicNFTStudio() {
   // --- HỆ THỐNG BIẾN TRẠNG THÁI (STATES) ---
+  const [status, setStatus] = useState('Hệ thống sẵn sàng');
   const [nfts, setNfts] = useState([]);
   const [myCollection, setMyCollection] = useState([]);
   const [transactions, setTransactions] = useState([]);
@@ -29,7 +30,31 @@ export default function MusicNFTStudio() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [nftData, setNftData] = useState({ name: '', price: '0.01' });
   const [loading, setLoading] = useState(false);
+  const [userAddress, setUserAddress] = useState('');
   const CONTRACT_ADDRESS = "0xdde62b6454e09c2d9ee759d7d3926508efef44b7";
+  
+  const connectWallet = async () => {
+  if (typeof window.ethereum !== 'undefined') {
+    try {
+      // 1. Yêu cầu kết nối ví MetaMask
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      const address = accounts[0];
+      
+      // 2. Rút gọn địa chỉ ví để hiển thị đẹp (ví dụ: 0x1234...abcd)
+      const shortenedAddress = `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+      setUserAddress(shortenedAddress);
+      
+      // 3. Ghi nhận email/ví vào hệ thống
+      setAuthEmail(address); 
+      console.log("💎 Đã kết nối ví:", address);
+    } catch (err) {
+      console.error("Lỗi kết nối ví:", err);
+    }
+  } else {
+    alert("Vui lòng cài đặt MetaMask để dùng tính năng này!");
+  }
+};
+
 
   // --- TỰ ĐỘNG TẢI DỮ LIỆU ---
   useEffect(() => {
@@ -68,19 +93,36 @@ export default function MusicNFTStudio() {
 
   // --- THANH TOÁN VIETQR BIDV ---
   const handleVietQR = (nft) => {
-	const MY_BANK = "BIDV";
-	const MY_ACCOUNT = "3120464627"; // Số tài khoản chuẩn của bạn  
-    // Đảm bảo lấy giá chuẩn, nếu không có thì mặc định 0.01
-  const price = parseFloat(nft.price || 0.01);
-  const amount = Math.round(price * 25500); // Tỷ giá quy đổi
+  // 1. TẠO LINK QR BIDV CHUẨN (KHÔNG LỖI ẢNH)
+  const amount = Math.round(parseFloat(nft.price || 0) * 25500);
   const description = encodeURIComponent(`MUA NFT ${nft.name.toUpperCase()}`);
-    // SỬA DÒNG NÀY: Bắt buộc dùng dấu huyền ` ` (cạnh phím số 1) để bao quanh link
-  const url = `https://vietqr.io{MY_BANK}-${MY_ACCOUNT}-compact2.jpg?amount=${amount}&addInfo=${description}&accountName=NGUYEN%20MANH%20HUNG`;
-    setActiveQRUrl(url);
-    setShowQRModal(true);
-    // Ghi nhận giao dịch nháp
-    recordTransaction(nft);
+  
+  // Link ảnh QR BIDV chính xác cho số TK 3120464627
+  const qrUrl = `https://vietqr.io{amount}&addInfo=${description}&accountName=NGUYEN%20MANH%20HUNG`;
+  
+  setActiveQRUrl(qrUrl);
+  setShowQRModal(true);
+
+  // 2. GỬI EMAIL THÔNG BÁO TỰ ĐỘNG ĐẾN HÙNG LOUIS
+  const templateParams = {
+    nft_name: nft.name,
+    price: nft.price,
+    customer: authEmail || "Khách vãng lai",
+    amount_vnd: amount.toLocaleString('vi-VN')
   };
+
+  emailjs.send(
+    'service_1dhjp6a',
+    'template_fk98mhc',
+    templateParams,
+    'kQ7_6eXaohS_msZ-P'
+  ).then(() => {
+    console.log("📧 Đã gửi thư báo đơn hàng mới!");
+  }).catch((err) => {
+    console.error("Lỗi gửi email:", err);
+  });
+};
+
 
   const recordTransaction = async (nft) => {
     await supabase.from('transactions').insert([{
@@ -125,7 +167,11 @@ export default function MusicNFTStudio() {
         <div style={styles.navLogo}>HÙNG LOUIS <span style={{color: '#6366f1'}}>STUDIO</span></div>
         <div style={{display: 'flex', gap: '20px', alignItems: 'center'}}>
           <div style={styles.visitBadge}>👁️ {totalVisits.toLocaleString()} lượt ghé thăm</div>
-          <button style={styles.btnNav} onClick={() => setShowAuthModal(true)}>
+          <button style={styles.btnNav} onClick={connectWallet}>
+			{userAddress ? `🦊 ${userAddress}` : (authEmail ? `👤 ${authEmail.substring(0,8)}...` : '🔗 Kết nối Ví')}
+		  </button>
+
+		  <button style={styles.btnNav} onClick={() => setShowAuthModal(true)}>
             {authEmail ? `👤 ${authEmail.substring(0,8)}...` : '📧 Đăng nhập'}
           </button>
         </div>
@@ -135,7 +181,7 @@ export default function MusicNFTStudio() {
       <section style={styles.mintSection}>
         <div style={styles.card}>
 			<div style={styles.policyBox}>
-  <p>🛡️ <b>Quy định sàn:</b></p>
+  <p>🛡️ <b>Chính sách SÀN GIAO DỊCH:</b></p>
   <ul style={{fontSize: '12px', color: '#888', textAlign: 'left'}}>
     <li>Phí duy trì hệ thống: <b>2.5%</b> (Trừ trực tiếp khi giao dịch thành công).</li>
     <li>Phí tác quyền nghệ sĩ: <b>5%</b> cho mọi giao dịch thứ cấp (Còn gọi là Hoa hồng tái bản).</li>
@@ -191,7 +237,7 @@ export default function MusicNFTStudio() {
         </label>
       </div>
 
-      <button onClick={handleMintOneClick} style={styles.btnMint}>XUẤT BẢN LÊN SÀN GIAO DỊCH</button>
+      <button onClick={handleMint} style={styles.btnMint}>XUẤT BẢN LÊN SÀN GIAO DỊCH</button>
     </div>
     ) : (
     <div style={styles.loginInvite}>
@@ -270,7 +316,8 @@ export default function MusicNFTStudio() {
     height: 'auto', 
     borderRadius: '15px', 
     backgroundColor: '#fff', // Nền trắng giúp QR dễ quét hơn
-    padding: '15px'
+    padding: '15px',
+	display: 'block'
   }}
   onError={(e) => {
     // Nếu vẫn lỗi, thử tải lại link đơn giản hơn
