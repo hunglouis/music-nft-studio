@@ -1,6 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
+  output: 'export',
+  images: {
+    unoptimized: true,
+  },
+reactStrictMode: true,// Nếu bạn có các cấu hình cũ khác, hãy giữ chúng ở trong dấu ngoặc nhọn này
 };
 
-export default nextConfig; // Thay module.exports bằng dòng này
+export default nextConfig;

@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "^5.6.1",
-    "@supabase/supabase-js": "^2.99.3",
+    "@supabase/supabase-js": "^2.101.1",
     "axios": "^1.14.0",
     "ethers": "^6.13.2",
     "fs": "^0.0.1-security",
@@ -17,6 +17,7 @@
     "next": "^14.2.15",
     "node-cron": "^4.2.1",
     "node.js": "^0.0.1-security",
+    "qrcode.react": "^4.2.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "xlsx": "^0.18.5"
@@ -29,6 +30,7 @@
     "@typechain/hardhat": "^9.1.0",
     "@types/chai": "^4.3.20",
     "@types/mocha": "^10.0.10",
+    "@types/react": "19.2.14",
     "chai": "^4.5.0",
     "hardhat": "^2.22.17",
     "hardhat-gas-reporter": "^1.0.10",

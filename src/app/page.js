@@ -196,7 +196,7 @@ export default function MusicNFTStudio() {
 		  <input style={styles.input} placeholder="Tên bản nhạc" onChange={e => setNftData({...nftData, name: e.target.value})} />
           <textarea style={{...styles.input, height: '60px', marginTop: '10px'}} placeholder="Mô tả" onChange={e => setNftData({...nftData, desc: e.target.value})} />
           <div style={{display: 'flex', gap: '10px', marginTop: '10px'}}>
-             <input type="number" style={styles.input} placeholder="Giá MATIC" onChange={e => setNftData({...nftData, price: e.target.value})} />
+             <input type="number" style={styles.input} placeholder="Giá ETH" onChange={e => setNftData({...nftData, price: e.target.value})} />
              <input type="file" onChange={e => setSelectedFile(e.target.files)} />
           </div>
 		  <div style={styles.fileUploadWrapper}>
@@ -228,7 +228,7 @@ export default function MusicNFTStudio() {
       <p style={styles.authInfo}>Đang đăng bài với tư cách: <b>{authEmail}</b></p>
       
       <input style={styles.input} placeholder="Tên bản nhạc..." onChange={e => setNftData({...nftData, name: e.target.value})} />
-      <input type="number" style={styles.input} placeholder="Giá niêm yết (MATIC)" onChange={e => setNftData({...nftData, price: e.target.value})} />
+      <input type="number" style={styles.input} placeholder="Giá niêm yết (ETH)" onChange={e => setNftData({...nftData, price: e.target.value})} />
       
       <div style={styles.uploadBox}>
         <input type="file" id="file-upload" style={{display: 'none'}} onChange={e => setSelectedFile(e.target.files)} />
@@ -260,7 +260,7 @@ export default function MusicNFTStudio() {
               <h4 style={{marginBottom: '5px'}}>{nft.name}</h4>
               <p style={{fontSize: '12px', color: '#666'}}>Nghệ sĩ: {nft.creator_email || 'Hùng Louis'}</p>
               <div style={styles.cardFooter}>
-                <span style={{color: '#6366f1', fontWeight: 'bold'}}>{nft.price} MATIC</span>
+                <span style={{color: '#6366f1', fontWeight: 'bold'}}>{nft.price} ETH</span>
                 {nft.is_for_sale ? (
                   <button style={styles.btnBuy} onClick={() => handleVietQR(nft)}>🏦 Mua VNĐ</button>
                 ) : (
@@ -279,7 +279,7 @@ export default function MusicNFTStudio() {
           {transactions.map(tx => (
             <div key={tx.id} style={styles.historyRow}>
               <span>🛍️ <b>{tx.nft_name}</b> vừa được sở hữu bởi <i>{tx.buyer.substring(0,10)}...</i></span>
-              <span style={{color: '#6366f1', fontWeight: 'bold'}}>{tx.price} MATIC</span>
+              <span style={{color: '#6366f1', fontWeight: 'bold'}}>{tx.price} ETH</span>
             </div>
           ))}
         </div>
@@ -586,4 +586,3 @@ const styles = {
   },
 
 };
-
