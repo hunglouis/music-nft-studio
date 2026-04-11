@@ -4,16 +4,16 @@ import { createClient } from '@supabase/supabase-js';
 import axios from 'axios';
 
 // 1. ĐỊA CHỈ "CỖ MÁY" SÀN GIAO DỊCH (SMART CONTRACT CHỦ)
-const SMARTCONTRACT_ADDRESS =process.env.CONTRACT_ADDRESS
+const SMARTCONTRACT_ADDRESS = "0xdde62b6454e09c2d9ee759d7d3926508efef44b7";
 
 // 2. ĐỊA CHỈ VÍ CHỦ SÀN NHẬN PHÍ 2.5% (TỪ FILE .ENV)
 const PLATFORM_ADMIN_WALLET = process.env.NEXT_PUBLIC_ADMIN_WALLET;
 
-// Thay vì dùng trực tiếp, hãy dùng logic "Phòng thủ"
+
 const supabase = createClient(
-  `https://hmvvjjiiaelcsfqgxbxv.supabase.co`,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-	);
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
 
 export default function MusicNFTStudio() {
   // --- HỆ THỐNG BIẾN TRẠNG THÁI (STATES) ---
@@ -57,23 +57,6 @@ export default function MusicNFTStudio() {
 
 
   // --- TỰ ĐỘNG TẢI DỮ LIỆU ---
-  
- // Nếu dùng npm/yarn thì cần import
-// const axios = require('axios'); // Cho Node.js
-// import axios from 'axios'; // Cho React/ES6
-
-// Ví dụ lấy dữ liệu NFT từ một API
-async function fetchData() {
-  try {
-    const response = await axios.get('https://example.com');
-    console.log(response.data);
-  } catch (error) {
-    console.error("Lỗi khi gọi API:", error);
-  }
-}
- 
-  
-  
   useEffect(() => {
     fetchNFTs();
     fetchTransactions();
@@ -157,7 +140,7 @@ async function fetchData() {
     try {
       const formData = new FormData();
       formData.append('file', selectedFile);
-      const res = await axios.post(`https://api.pinata.cloud/pinning/pinFileToIPFS`, formData, {
+      const res = await axios.post("https://pinata.cloud", formData, {
         headers: {
           'pinata_api_key': process.env.NEXT_PUBLIC_PINATA_KEY,
           'pinata_secret_api_key': process.env.NEXT_PUBLIC_PINATA_SECRET,
@@ -166,7 +149,7 @@ async function fetchData() {
       await supabase.from('hunglouis').insert([{
         name: nftData.name,
         price: nftData.price,
-        image_url:`https://ipfs.io{autoCID}`,
+        image_url: `https://pinata.cloud{res.data.IpfsHash}`,
         creator_email: authEmail,
         is_for_sale: true,
         created_at: new Date()
@@ -603,4 +586,3 @@ const styles = {
   },
 
 };
-
