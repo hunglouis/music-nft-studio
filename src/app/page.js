@@ -177,7 +177,7 @@ async function fetchData() {
           name: nftData.name, 
           description: nftData.desc,
           hunglouis_id: autoCID, 
-          image_url: `https://ipfs.io{autoCID}`,
+          image_url: `https://Gateway.pinata.cloud/ipfs/{autoCID}`,
           artist: nftData.artist,
           created_at: new Date()
       }]);
