@@ -151,30 +151,47 @@ async function fetchData() {
     fetchTransactions();
   };
 
-  const handleMint = async () => {
+  const handleMintOneClick = async () => {
     if (!selectedFile || !nftData.name) return alert("Vui lòng nhập tên và chọn file!");
+    
     setLoading(true);
+    setStatus('🚀 Đang mã hóa và đẩy lên IPFS...');
+
     try {
+      // 1. Upload lên Pinata
       const formData = new FormData();
-      formData.append('file', selectedFile);
-      const res = await axios.post(`https://api.pinata.cloud/pinning/pinFileToIPFS`, formData, {
+      formData.append('file', selectedFile[0]);
+      const res = await axios.post("https://api.pinata.cloud/pinning/pinFileToIPFS", formData, {
         headers: {
-          'pinata_api_key': process.env.NEXT_PUBLIC_PINATA_KEY,
-          'pinata_secret_api_key': process.env.NEXT_PUBLIC_PINATA_SECRET,
+          'Content-Type': 'multipart/form-data',
+          'pinata_api_key': process.env.NEXT_PUBLIC_PINATA_KEY.trim(),
+          'pinata_secret_api_key': process.env.NEXT_PUBLIC_PINATA_SECRET.trim(),
         }
       });
-      await supabase.from('hunglouis').insert([{
-        name: nftData.name,
-        price: nftData.price,
-        image_url:`https://ipfs.io{autoCID}`,
-        creator_email: authEmail,
-        is_for_sale: true,
-        created_at: new Date()
+
+      const autoCID = res.data.IpfsHash;
+      setStatus('✅ Đã có CID! Đang lưu vào Marketplace...');
+
+      // 2. Lưu vào Supabase (Kết hợp Thủ công + Tự động)
+      const { error } = await supabase.from('hunglouis').insert([{ 
+          name: nftData.name, 
+          description: nftData.desc,
+          hunglouis_id: autoCID, 
+          image_url: `https://ipfs.io{autoCID}`,
+          artist: nftData.artist,
+          created_at: new Date()
       }]);
-      alert("🎉 Phát hành thành công!");
+
+      if (error) throw error;
+      setStatus('🎉 Phát hành NFT thành công!');
+      setNftData({ name: '', desc: '', artist: 'Hùng Louis' });
+      setSelectedFile(null);
       fetchNFTs();
-    } catch (e) { alert("Lỗi tải lên: " + e.message); }
-    setLoading(false);
+    } catch (err) {
+      setStatus('❌ Lỗi hệ thống: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -228,7 +245,7 @@ async function fetchData() {
   />
 </div>
 		  
-          <button onClick={handleMint} disabled={loading} style={loading ? styles.btnDisabled : styles.btnMint}>
+          <button onClick={handleMintOneClick} disabled={loading} style={loading ? styles.btnDisabled : styles.btnMint}>
             {loading ? 'ĐANG XỬ LÝ...' : 'PHÁT HÀNH NGAY'}
 			TẢI LÊN SÀN GIAO DỊCH
           </button>
@@ -254,7 +271,7 @@ async function fetchData() {
         </label>
       </div>
 
-      <button onClick={handleMint} style={styles.btnMint}>XUẤT BẢN LÊN SÀN GIAO DỊCH</button>
+      <button onClick={handleMintOneClick} style={styles.btnMint}>XUẤT BẢN LÊN SÀN GIAO DỊCH</button>
     </div>
     ) : (
     <div style={styles.loginInvite}>
