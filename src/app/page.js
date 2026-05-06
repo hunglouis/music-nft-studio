@@ -9,6 +9,9 @@ const SMARTCONTRACT_ADDRESS =process.env.CONTRACT_ADDRESS
 // 2. ĐỊA CHỈ VÍ CHỦ SÀN NHẬN PHÍ 2.5% (TỪ FILE .ENV)
 const PLATFORM_ADMIN_WALLET = process.env.NEXT_PUBLIC_ADMIN_WALLET;
 
+const pinata_api_key = process.env.NEXT_PUBLIC_PINATA_KEY
+const pinata_secret_api_key = process.env.NEXT_PUBLIC_PINATA_SECRET
+
 // Thay vì dùng trực tiếp, hãy dùng logic "Phòng thủ"
 const supabase = createClient(
   `https://hmvvjjiiaelcsfqgxbxv.supabase.co`,
