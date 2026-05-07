@@ -219,7 +219,7 @@ async function fetchData() {
         <div style={styles.card}>
 			<div style={styles.policyBox}>
   <p>🛡️ <b>Chính sách SÀN GIAO DỊCH:</b></p>
-  <ul style={{fontSize: '12px', color: '#888', textAlign: 'left'}}>
+  <ul style={{fontSize: '14px', color: '#888', textAlign: 'left'}}>
     <li>Phí duy trì hệ thống: <b>2.5%</b> (Trừ trực tiếp khi giao dịch thành công).</li>
     <li>Phí tác quyền nghệ sĩ: <b>5%</b> cho mọi giao dịch thứ cấp (Còn gọi là Hoa hồng tái bản).</li>
     <li>Nghệ sĩ tự chịu trách nhiệm về bản quyền âm nhạc đã tải lên.</li>
@@ -398,7 +398,7 @@ const styles = {
   container: { backgroundColor: '#050505', color: '#fff', minHeight: '100vh', padding: '120px 40px' },
   navbar: { position: 'fixed', top: '15px', left: '20px', right: '20px', backgroundColor: 'rgba(15, 15, 15, 0.8)', backdropFilter: 'blur(15px)', display: 'flex', justifyContent: 'space-between', padding: '15px 30px', borderRadius: '100px', border: '1px solid #333', zIndex: 1000 },
   navLogo: { fontSize: '20px', fontWeight: '900' },
-  visitBadge: { color: '#6366f1', fontSize: '11px', fontWeight: 'bold', border: '1px solid rgba(99,102,241,0.2)', padding: '5px 15px', borderRadius: '50px', backgroundColor: 'rgba(99,102,241,0.05)' },
+  visitBadge: { color: '#6366f1', fontSize: '14px', fontWeight: 'bold', border: '1px solid rgba(99,102,241,0.2)', padding: '5px 15px', borderRadius: '50px', backgroundColor: 'rgba(99,102,241,0.05)' },
   btnNav: { background: 'linear-gradient(90deg, #6366f1, #a855f7)', border: 'none', color: '#fff', padding: '8px 20px', borderRadius: '50px', fontWeight: 'bold', cursor: 'pointer' },
   sectionMax: { maxWidth: '650px', margin: '0 auto 60px' },
   cardGlass: { backgroundColor: 'rgba(255,255,255,0.03)', padding: '35px', borderRadius: '32px', border: '1px solid #222', backdropFilter: 'blur(15px)' },
@@ -566,10 +566,10 @@ const styles = {
   },
   visitBadge: {
     backgroundColor: 'rgba(99, 102, 241, 0.15)',
-    color: '#6366f1',
+    color: '#f1f1f7',
     padding: '5px 12px',
     borderRadius: '20px',
-    fontSize: '12px',
+    fontSize: '16px',
     fontWeight: 'bold',
     border: '1px solid rgba(99, 102, 241, 0.3)',
   },
