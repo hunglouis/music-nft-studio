@@ -1,0 +1,95 @@
+WITH eligible AS (
+  SELECT
+    h.contract_address,
+    h.token_id AS item_id,
+    h.name,
+    h.wallet_address,
+  FROM public.hunglouis h
+)
+SELECT
+  e.contract_address,
+  e.item_id,
+  e.name,
+  e.wallet_address,
+FROM eligible e
+JOIN public.items i
+  ON i.contract_address = e.contract_address
+ AND i.item_id = e.item_id;
+ 
+ 
+ 
+SELECT
+    h.contract_address,
+    h.token_id AS item_id,
+    h.name,
+    h.wallet_address
+FROM public.hunglouis h
+JOIN public.items i
+  ON i.contract_address = h.contract_address
+ AND i.item_id = h.item_id;
+ 
+ 
+ 
+ 
+INSERT INTO public.items (id, name, description, image_url, status, created_at, artist, views, cid, owner_address, creator_address)
+SELECT id, name, description, image_url, status, created_at, artist, views, hunglouis_id, owner_address, creator_address
+FROM public.hunglouis h;
+
+id
+name
+description
+image_url
+status
+created_at
+artist
+views
+
+hunglouis_id => cid
+floor_price
+
+create table public.hunglouis (
+  created_at timestamp with time zone not null default now(),
+  image_url text null,
+  name text null,
+  wallet_address text null,
+  token_id text null,
+  contract_address text null,
+  collection_name text null,
+  "Item" text null,
+  audio_url text null,
+  artist text null,
+  hunglouis_id text null,
+  description text null,
+  floor_price double precision null default '0.01'::double precision,
+  views bigint null default '0'::bigint,
+  creator_address text null,
+  status text null default 'active'::text,
+  is_for_sale boolean null,
+  id uuid null default auth.uid (),
+  constraint unique_nft unique (contract_address, token_id),
+  constraint unique_nft_id unique (contract_address, token_id)
+) TABLESPACE pg_default;
+
+create table public.items (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  item_id text not null,
+  contract_address text not null,
+  name text not null,
+  description text null,
+  image_url text null,
+  metadata_url text null,
+  owner_address text not null,
+  creator_address text not null,
+  price numeric null,
+  status text null default 'active'::text,
+  created_at timestamp with time zone null default timezone ('utc'::text, now()),
+  token_id text null,
+  collection_name text null,
+  audio_url text null,
+  artist text null,
+  views bigint null default 0,
+  source text null default 'internal'::text,
+  is_for_sale boolean null default true,
+  constraint items_pkey primary key (id),
+  constraint items_contract_address_item_id_key unique (contract_address, item_id)
+) TABLESPACE pg_default;

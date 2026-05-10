@@ -2,9 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import axios from 'axios';
+import { ethers } from "ethers";
+
 
 // 1. ĐỊA CHỈ "CỖ MÁY" SÀN GIAO DỊCH (SMART CONTRACT CHỦ)
-const SMARTCONTRACT_ADDRESS =process.env.CONTRACT_ADDRESS
+const SMARTCONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS
+
+const ALCHEMY_API_KEY = process.env.NEXT_PUBLIC_ALCHEMY_KEY;
 
 // 2. ĐỊA CHỈ VÍ CHỦ SÀN NHẬN PHÍ 2.5% (TỪ FILE .ENV)
 const PLATFORM_ADMIN_WALLET = process.env.NEXT_PUBLIC_ADMIN_WALLET;
@@ -12,14 +16,22 @@ const PLATFORM_ADMIN_WALLET = process.env.NEXT_PUBLIC_ADMIN_WALLET;
 const pinata_api_key = process.env.NEXT_PUBLIC_PINATA_KEY
 const pinata_secret_api_key = process.env.NEXT_PUBLIC_PINATA_SECRET
 
+const FACTORY_ABI = [{ "anonymous": false, "inputs": [{ "indexed": true, "internalType": "address", "name": "collectionAddress", "type": "address" }, { "indexed": false, "internalType": "string", "name": "name", "type": "string" }, { "indexed": true, "internalType": "address", "name": "creator", "type": "address" }, { "indexed": false, "internalType": "uint256", "name": "timestamp", "type": "uint256" }], "name": "CollectionCreated", "type": "event" }, { "inputs": [{ "internalType": "string", "name": "_name", "type": "string" }, { "internalType": "string", "name": "_symbol", "type": "string" }], "name": "createCollection", "outputs": [], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "name": "allCollections", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" }, { "inputs": [], "name": "getCollectionCount", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" }];
+const NFT_ABI = [{ "inputs": [{ "internalType": "string", "name": "name", "type": "string" }, { "internalType": "string", "name": "symbol", "type": "string" }, { "internalType": "address", "name": "_creator", "type": "address" }], "stateMutability": "nonpayable", "type": "constructor" }, { "inputs": [{ "internalType": "address", "name": "sender", "type": "address" }, { "internalType": "uint256", "name": "tokenId", "type": "uint256" }, { "internalType": "address", "name": "owner", "type": "address" }], "name": "ERC721IncorrectOwner", "type": "error" }, { "inputs": [{ "internalType": "address", "name": "operator", "type": "address" }, { "internalType": "uint256", "name": "tokenId", "type": "uint256" }], "name": "ERC721InsufficientApproval", "type": "error" }, { "inputs": [{ "internalType": "address", "name": "approver", "type": "address" }], "name": "ERC721InvalidApprover", "type": "error" }, { "inputs": [{ "internalType": "address", "name": "operator", "type": "address" }], "name": "ERC721InvalidOperator", "type": "error" }, { "inputs": [{ "internalType": "address", "name": "owner", "type": "address" }], "name": "ERC721InvalidOwner", "type": "error" }, { "inputs": [{ "internalType": "address", "name": "receiver", "type": "address" }], "name": "ERC721InvalidReceiver", "type": "error" }, { "inputs": [{ "internalType": "address", "name": "sender", "type": "address" }], "name": "ERC721InvalidSender", "type": "error" }, { "inputs": [{ "internalType": "uint256", "name": "tokenId", "type": "uint256" }], "name": "ERC721NonexistentToken", "type": "error" }, { "anonymous": false, "inputs": [{ "indexed": true, "internalType": "address", "name": "owner", "type": "address" }, { "indexed": true, "internalType": "address", "name": "approved", "type": "address" }, { "indexed": true, "internalType": "uint256", "name": "tokenId", "type": "uint256" }], "name": "Approval", "type": "event" }, { "anonymous": false, "inputs": [{ "indexed": true, "internalType": "address", "name": "owner", "type": "address" }, { "indexed": true, "internalType": "address", "name": "operator", "type": "address" }, { "indexed": false, "internalType": "bool", "name": "approved", "type": "bool" }], "name": "ApprovalForAll", "type": "event" }, { "anonymous": false, "inputs": [{ "indexed": false, "internalType": "uint256", "name": "_fromTokenId", "type": "uint256" }, { "indexed": false, "internalType": "uint256", "name": "_toTokenId", "type": "uint256" }], "name": "BatchMetadataUpdate", "type": "event" }, { "anonymous": false, "inputs": [{ "indexed": false, "internalType": "uint256", "name": "_tokenId", "type": "uint256" }], "name": "MetadataUpdate", "type": "event" }, { "anonymous": false, "inputs": [{ "indexed": true, "internalType": "address", "name": "from", "type": "address" }, { "indexed": true, "internalType": "address", "name": "to", "type": "address" }, { "indexed": true, "internalType": "uint256", "name": "tokenId", "type": "uint256" }], "name": "Transfer", "type": "event" }, { "inputs": [{ "internalType": "address", "name": "to", "type": "address" }, { "internalType": "uint256", "name": "tokenId", "type": "uint256" }], "name": "approve", "outputs": [], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [{ "internalType": "address", "name": "owner", "type": "address" }], "name": "balanceOf", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" }, { "inputs": [], "name": "creator", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" }, { "inputs": [{ "internalType": "uint256", "name": "tokenId", "type": "uint256" }], "name": "getApproved", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" }, { "inputs": [{ "internalType": "address", "name": "owner", "type": "address" }, { "internalType": "address", "name": "operator", "type": "address" }], "name": "isApprovedForAll", "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }], "stateMutability": "view", "type": "function" }, { "inputs": [{ "internalType": "address", "name": "to", "type": "address" }, { "internalType": "string", "name": "uri", "type": "string" }], "name": "mintNFT", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [], "name": "name", "outputs": [{ "internalType": "string", "name": "", "type": "string" }], "stateMutability": "view", "type": "function" }, { "inputs": [{ "internalType": "uint256", "name": "tokenId", "type": "uint256" }], "name": "ownerOf", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" }, { "inputs": [{ "internalType": "address", "name": "from", "type": "address" }, { "internalType": "address", "name": "to", "type": "address" }, { "internalType": "uint256", "name": "tokenId", "type": "uint256" }], "name": "safeTransferFrom", "outputs": [], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [{ "internalType": "address", "name": "from", "type": "address" }, { "internalType": "address", "name": "to", "type": "address" }, { "internalType": "uint256", "name": "tokenId", "type": "uint256" }, { "internalType": "bytes", "name": "data", "type": "bytes" }], "name": "safeTransferFrom", "outputs": [], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [{ "internalType": "address", "name": "operator", "type": "address" }, { "internalType": "bool", "name": "approved", "type": "bool" }], "name": "setApprovalForAll", "outputs": [], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [{ "internalType": "bytes4", "name": "interfaceId", "type": "bytes4" }], "name": "supportsInterface", "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }], "stateMutability": "view", "type": "function" }, { "inputs": [], "name": "symbol", "outputs": [{ "internalType": "string", "name": "", "type": "string" }], "stateMutability": "view", "type": "function" }, { "inputs": [{ "internalType": "uint256", "name": "tokenId", "type": "uint256" }], "name": "tokenURI", "outputs": [{ "internalType": "string", "name": "", "type": "string" }], "stateMutability": "view", "type": "function" }, { "inputs": [{ "internalType": "address", "name": "from", "type": "address" }, { "internalType": "address", "name": "to", "type": "address" }, { "internalType": "uint256", "name": "tokenId", "type": "uint256" }], "name": "transferFrom", "outputs": [], "stateMutability": "nonpayable", "type": "function" }];
+const FACTORY_ADDRESS = "0x8ee44FBe0Cca3D7016935E42C844f8ae765844C7"; // Địa chỉ bạn vừa deploy thành công
+
+
 // Thay vì dùng trực tiếp, hãy dùng logic "Phòng thủ"
 const supabase = createClient(
   `https://hmvvjjiiaelcsfqgxbxv.supabase.co`,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-	);
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
+
 
 export default function MusicNFTStudio() {
   // --- HỆ THỐNG BIẾN TRẠNG THÁI (STATES) ---
+  const [isLoading, setIsLoading] = useState(false);
+  const [collectionSymbol, setCollectionSymbol] = useState("");
   const [status, setStatus] = useState('Hệ thống sẵn sàng');
   const [nfts, setNfts] = useState([]);
   const [myCollection, setMyCollection] = useState([]);
@@ -35,55 +47,57 @@ export default function MusicNFTStudio() {
   const [loading, setLoading] = useState(false);
   const [userAddress, setUserAddress] = useState('');
   const CONTRACT_ADDRESS = "0xdde62b6454e09c2d9ee759d7d3926508efef44b7";
-  
+  const [collectionName, setCollectionName] = useState("");
+  const [currentCollectionAddress, setCurrentCollectionAddress] = useState("");
+
   const connectWallet = async () => {
-  if (typeof window.ethereum !== 'undefined') {
-    try {
-      // 1. Yêu cầu kết nối ví MetaMask
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      const address = accounts[0];
-      
-      // 2. Rút gọn địa chỉ ví để hiển thị đẹp (ví dụ: 0x1234...abcd)
-      const shortenedAddress = `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
-      setUserAddress(shortenedAddress);
-      
-      // 3. Ghi nhận email/ví vào hệ thống
-      setAuthEmail(address); 
-      console.log("💎 Đã kết nối ví:", address);
-    } catch (err) {
-      console.error("Lỗi kết nối ví:", err);
+    if (typeof window.ethereum !== 'undefined') {
+      try {
+        // 1. Yêu cầu kết nối ví MetaMask
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const address = accounts[0];
+
+        // 2. Rút gọn địa chỉ ví để hiển thị đẹp (ví dụ: 0x1234...abcd)
+        const shortenedAddress = `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+        setUserAddress(shortenedAddress);
+
+        // 3. Ghi nhận email/ví vào hệ thống
+        setAuthEmail(address);
+        console.log("💎 Đã kết nối ví:", address);
+      } catch (err) {
+        console.error("Lỗi kết nối ví:", err);
+      }
+    } else {
+      alert("Vui lòng cài đặt MetaMask để dùng tính năng này!");
     }
-  } else {
-    alert("Vui lòng cài đặt MetaMask để dùng tính năng này!");
-  }
-};
+  };
 
 
   // --- TỰ ĐỘNG TẢI DỮ LIỆU ---
-  
- // Nếu dùng npm/yarn thì cần import
-// const axios = require('axios'); // Cho Node.js
-// import axios from 'axios'; // Cho React/ES6
 
-// Ví dụ lấy dữ liệu NFT từ một API
-async function fetchData() {
-  try {
-    const response = await axios.get('https://example.com');
-    console.log(response.data);
-  } catch (error) {
-    console.error("Lỗi khi gọi API:", error);
+  // Nếu dùng npm/yarn thì cần import
+  // const axios = require('axios'); // Cho Node.js
+  // import axios from 'axios'; // Cho React/ES6
+
+  // Ví dụ lấy dữ liệu NFT từ một API
+  async function fetchData() {
+    try {
+      const response = await axios.get('https://example.com');
+      console.log(response.data);
+    } catch (error) {
+      console.error("Lỗi khi gọi API:", error);
+    }
   }
-}
- 
-  
-  
+
+
+
   useEffect(() => {
     fetchNFTs();
     fetchTransactions();
     handleVisitorCount();
   }, []);
 
-  useEffect(() => {
+      useEffect(() => {
     if (authEmail) fetchMyCollection();
   }, [authEmail]);
 
@@ -93,12 +107,12 @@ async function fetchData() {
   };
 
   const fetchTransactions = async () => {
-    const { data } = await supabase.from('transactions').select('*').order('created_at', { ascending: false }).limit(5);
+    const { data } = await supabase.from('transactions').select('*').order('created_at', { ascending: false }).limit(100);
     setTransactions(data || []);
   };
 
   const fetchMyCollection = async () => {
-    const { data } = await supabase.from('hunglouis').select('*').eq('owner_email', authEmail);
+    const { data } = await supabase.from('hunglouis').select('*').eq('creator_address', authEmail).order('created_at', { ascending: false });
     setMyCollection(data || []);
   };
 
@@ -113,35 +127,35 @@ async function fetchData() {
 
   // --- THANH TOÁN VIETQR BIDV ---
   const handleVietQR = (nft) => {
-  // 1. TẠO LINK QR BIDV CHUẨN (KHÔNG LỖI ẢNH)
-  const amount = Math.round(parseFloat(nft.price || 0) * 25500);
-  const description = encodeURIComponent(`MUA NFT ${nft.name.toUpperCase()}`);
-  
-  // Link ảnh QR BIDV chính xác cho số TK 3120464627
-  const qrUrl = `https://vietqr.io{amount}&addInfo=${description}&accountName=NGUYEN%20MANH%20HUNG`;
-  
-  setActiveQRUrl(qrUrl);
-  setShowQRModal(true);
+    // 1. TẠO LINK QR BIDV CHUẨN (KHÔNG LỖI ẢNH)
+    const amount = Math.round(parseFloat(nft.price || 0) * 25500);
+    const description = encodeURIComponent(`MUA NFT ${nft.name.toUpperCase()}`);
 
-  // 2. GỬI EMAIL THÔNG BÁO TỰ ĐỘNG ĐẾN HÙNG LOUIS
-  const templateParams = {
-    nft_name: nft.name,
-    price: nft.price,
-    customer: authEmail || "Khách vãng lai",
-    amount_vnd: amount.toLocaleString('vi-VN')
+    // Link ảnh QR BIDV chính xác cho số TK 3120464627
+    const qrUrl =`https://img.vietqr.io/image/BIDV-3120464627-compact2.png?amount=${amount}&addInfo=${description}&accountName=VU%20MANH%20HUNG`;
+
+    setActiveQRUrl(qrUrl);
+    setShowQRModal(true);
+
+    // 2. GỬI EMAIL THÔNG BÁO TỰ ĐỘNG ĐẾN HÙNG LOUIS
+    const templateParams = {
+      nft_name: nft.name,
+      price: nft.price,
+      customer: authEmail || "Khách vãng lai",
+      amount_vnd: amount.toLocaleString('vi-VN')
+    };
+
+    emailjs.send(
+      'service_1dhjp6a',
+      'template_fk98mhc',
+      templateParams,
+      'kQ7_6eXaohS_msZ-P'
+    ).then(() => {
+      console.log("📧 Đã gửi thư báo đơn hàng mới!");
+    }).catch((err) => {
+      console.error("Lỗi gửi email:", err);
+    });
   };
-
-  emailjs.send(
-    'service_1dhjp6a',
-    'template_fk98mhc',
-    templateParams,
-    'kQ7_6eXaohS_msZ-P'
-  ).then(() => {
-    console.log("📧 Đã gửi thư báo đơn hàng mới!");
-  }).catch((err) => {
-    console.error("Lỗi gửi email:", err);
-  });
-};
 
 
   const recordTransaction = async (nft) => {
@@ -154,62 +168,382 @@ async function fetchData() {
     fetchTransactions();
   };
 
-  const handleMintOneClick = async () => {
-    if (!selectedFile || !nftData.name) return alert("Vui lòng nhập tên và chọn file!");
-    
+  // Thay bằng địa chỉ bạn copy từ Remix lúc nãy
+const factoryAddress = "0x98D33be0350602DF5Ac1471486814bB9Bf696aa0"; 
+// Dán ABI của Factory vào đây
+const factoryAbi = [   {     "anonymous": false,     "inputs": [       {         "indexed": true,         "internalType": "address",         "name": "collectionAddress",         "type": "address"       },       {         "indexed": false,         "internalType": "string",         "name": "name",         "type": "string"       },       {         "indexed": true,         "internalType": "address",         "name": "creator",         "type": "address"       },       {         "indexed": false,         "internalType": "uint256",         "name": "timestamp",         "type": "uint256"       }     ],     "name": "CollectionCreated",     "type": "event"   },   {     "inputs": [       {         "internalType": "string",         "name": "_name",         "type": "string"       },       {         "internalType": "string",         "name": "_symbol",         "type": "string"       }     ],     "name": "createCollection",     "outputs": [],     "stateMutability": "nonpayable",     "type": "function"   },   {     "inputs": [       {         "internalType": "uint256",         "name": "",         "type": "uint256"       }     ],     "name": "allCollections",     "outputs": [       {         "internalType": "address",         "name": "",         "type": "address"       }     ],     "stateMutability": "view",     "type": "function"   } ];
+const ALCHEMY_API_KEY="ElqA63Wr3I1aLGnMnbRqv"
+const RPC_URL = "https://eth-sepolia.g.alchemy.com/v2/" + ALCHEMY_API_KEY;
+const deployAndMint = async () => {
+
+  if (!selectedFile || !selectedFile[0]) {
+    alert("Vui lòng chọn file nhạc");
+    return;
+  }
+
+  try {
+
     setLoading(true);
-    setStatus('🚀 Đang mã hóa và đẩy lên IPFS...');
 
-    try {
-      // 1. Upload lên Pinata
-      const formData = new FormData();
-      formData.append('file', selectedFile[0]);
-      const res = await axios.post("https://api.pinata.cloud/pinning/pinFileToIPFS", formData, {
+    // =====================================================
+    // 1. UPLOAD AUDIO
+    // =====================================================
+
+    setStatus("🚀 Đang upload audio lên IPFS...");
+
+    const formData = new FormData();
+
+    formData.append("file", selectedFile[0]);
+
+    const uploadRes = await axios.post(
+      "https://api.pinata.cloud/pinning/pinFileToIPFS",
+      formData,
+      {
         headers: {
-          'Content-Type': 'multipart/form-data',
-          'pinata_api_key': process.env.NEXT_PUBLIC_PINATA_KEY.trim(),
-          'pinata_secret_api_key': process.env.NEXT_PUBLIC_PINATA_SECRET.trim(),
+          "Content-Type": "multipart/form-data",
+          pinata_api_key:
+            process.env.NEXT_PUBLIC_PINATA_KEY,
+
+          pinata_secret_api_key:
+            process.env.NEXT_PUBLIC_PINATA_SECRET,
+        },
+      }
+    );
+
+    const musicCID = uploadRes.data.IpfsHash;
+
+    const audioURL =
+      `https://gateway.pinata.cloud/ipfs/${musicCID}`;
+
+    console.log("🎵 AUDIO URL =", audioURL);
+
+    // =====================================================
+    // 2. TẠO METADATA
+    // =====================================================
+
+    setStatus("🧠 Đang tạo metadata NFT...");
+
+    const metadata = {
+      name: nftData.name,
+
+      description: nftData.desc,
+
+      image:
+        "https://gateway.pinata.cloud/ipfs/bafkreigh2akiscaildcfakeimage",
+
+      animation_url: audioURL,
+
+      attributes: [
+        {
+          trait_type: "Artist",
+          value: authEmail || "Unknown",
+        },
+      ],
+    };
+
+    // =====================================================
+    // 3. UPLOAD METADATA
+    // =====================================================
+
+    const metadataRes = await axios.post(
+      "https://api.pinata.cloud/pinning/pinJSONToIPFS",
+      metadata,
+      {
+        headers: {
+          pinata_api_key:
+            process.env.NEXT_PUBLIC_PINATA_KEY,
+
+          pinata_secret_api_key:
+            process.env.NEXT_PUBLIC_PINATA_SECRET,
+        },
+      }
+    );
+
+    const metadataCID = metadataRes.data.IpfsHash;
+
+    const metadataURL =
+      `https://gateway.pinata.cloud/ipfs/${metadataCID}`;
+
+    console.log("📜 METADATA =", metadataURL);
+
+    // =====================================================
+    // 4. CONNECT WALLET
+    // =====================================================
+
+    setStatus("🦊 Đang kết nối MetaMask...");
+
+    await window.ethereum.request({
+      method: "wallet_switchEthereumChain",
+      params: [{ chainId: "0xaa36a7" }],
+    });
+
+    const provider =
+      new ethers.BrowserProvider(window.ethereum);
+
+    await provider.send("eth_requestAccounts", []);
+
+    const signer = await provider.getSigner();
+
+    // =====================================================
+    // 5. CONNECT FACTORY CONTRACT
+    // =====================================================
+
+    const factoryContract = new ethers.Contract(
+      FACTORY_ADDRESS,
+      FACTORY_ABI,
+      signer
+    );
+
+    // =====================================================
+    // 6. CREATE COLLECTION
+    // =====================================================
+
+    setStatus("🏗️ Đang tạo Collection...");
+
+    const createTx =
+      await factoryContract.createCollection(
+        collectionName,
+        collectionSymbol
+      );
+
+    const createReceipt =
+      await createTx.wait();
+
+    console.log("CREATE RECEIPT =", createReceipt);
+
+    // =====================================================
+    // 7. LẤY COLLECTION ADDRESS
+    // =====================================================
+
+    let newAddress = "";
+
+    for (const log of createReceipt.logs) {
+
+      try {
+
+        const parsed =
+          factoryContract.interface.parseLog(log);
+
+        console.log("PARSED EVENT =", parsed);
+
+        if (
+          parsed &&
+          parsed.name === "CollectionCreated"
+        ) {
+
+          newAddress =
+            parsed.args.collectionAddress;
+
+          console.log(
+            "✅ COLLECTION ADDRESS =",
+            newAddress
+          );
         }
-      });
 
-      const autoCID = res.data.IpfsHash;
-      setStatus('✅ Đã có CID! Đang lưu vào Marketplace...');
+      } catch (err) {
 
-      // 2. Lưu vào Supabase (Kết hợp Thủ công + Tự động)
-      const { error } = await supabase.from('hunglouis').insert([{ 
-          name: nftData.name, 
-          description: nftData.desc,
-          hunglouis_id: autoCID, 
-          image_url: `https://Gateway.pinata.cloud/ipfs/` + autoCID,
-          artist: nftData.artist,
-          created_at: new Date()
-      }]);
+        console.log("SKIP LOG");
 
-      if (error) throw error;
-      setStatus('🎉 Phát hành NFT thành công!');
-      setNftData({ name: '', desc: '', artist: 'Hùng Louis' });
-      setSelectedFile(null);
-      fetchNFTs();
-    } catch (err) {
-      setStatus('❌ Lỗi hệ thống: ' + err.message);
-    } finally {
-      setLoading(false);
+      }
     }
-  };
 
-  return (
+    if (!newAddress) {
+
+      alert("❌ Không lấy được địa chỉ Collection");
+
+      return;
+    }
+
+    // =====================================================
+    // 8. SAVE COLLECTION SUPABASE
+    // =====================================================
+
+    await supabase
+      .from("collections")
+      .insert([
+        {
+          collection_name: collectionName,
+
+          contract_address: newAddress,
+
+          creator_address:
+            await signer.getAddress(),
+
+          created_at: new Date(),
+        },
+      ]);
+
+    // =====================================================
+    // 9. CONNECT NFT CONTRACT
+    // =====================================================
+
+    const nftContract = new ethers.Contract(
+      newAddress,
+      NFT_ABI,
+      signer
+    );
+
+    // =====================================================
+    // 10. MINT NFT
+    // =====================================================
+
+    setStatus("⚡ Đang mint NFT...");
+
+    const mintTx =
+      await nftContract.mintNFT(
+        await signer.getAddress(),
+        metadataURL
+      );
+
+    const mintReceipt =
+      await mintTx.wait();
+
+    console.log("MINT RECEIPT =", mintReceipt);
+
+    // =====================================================
+    // 11. LẤY TOKEN ID
+    // =====================================================
+
+    const transferEvent =
+      mintReceipt.logs
+        .map((log) => {
+
+          try {
+
+            return nftContract.interface.parseLog(log);
+
+          } catch {
+
+            return null;
+          }
+        })
+        .find(
+          (e) =>
+            e &&
+            e.name === "Transfer"
+        );
+
+    const tokenId =
+      transferEvent.args.tokenId.toString();
+
+    console.log("🎯 TOKEN ID =", tokenId);
+
+    // =====================================================
+    // 12. SAVE NFT SUPABASE
+    // =====================================================
+
+    setStatus("💾 Đang lưu marketplace...");
+
+    const { error } =
+      await supabase
+        .from("items")
+        .insert([
+          {
+            token_id: tokenId,
+
+            collection_name: collectionName,
+
+            contract_address: newAddress,
+
+            name: nftData.name,
+
+            description: nftData.desc,
+
+            image_url:
+              "https://gateway.pinata.cloud/ipfs/bafkreigh2akiscaildcfakeimage",
+
+            music_url: audioURL,
+
+            metadata_url: metadataURL,
+
+            creator_address:
+              await signer.getAddress(),
+
+            owner_address:
+              await signer.getAddress(),
+
+            artist:
+              authEmail || "Unknown",
+
+            price:
+              nftData.price || 0.01,
+
+            tx_hash:
+              mintReceipt.hash,
+
+            status: "active",
+
+            is_for_sale: true,
+
+            created_at: new Date(),
+          },
+        ]);
+
+    if (error) {
+
+      console.error(error);
+
+      alert("❌ Lỗi lưu database");
+
+      return;
+    }
+
+    // =====================================================
+    // DONE
+    // =====================================================
+
+    setCurrentCollectionAddress(newAddress);
+
+    setStatus("🎉 NFT ĐÃ MINT THÀNH CÔNG");
+
+    alert(`
+🎉 NFT ĐÃ MINT THÀNH CÔNG
+
+COLLECTION:
+${collectionName}
+
+CONTRACT:
+${newAddress}
+
+TOKEN ID:
+${tokenId}
+`);
+
+    fetchNFTs();
+
+  } catch (err) {
+
+    console.error(err);
+
+    alert(
+      err.reason ||
+      err.message ||
+      "Mint NFT thất bại"
+    );
+
+    setStatus("❌ Có lỗi xảy ra");
+
+  } finally {
+
+    setLoading(false);
+
+  }
+};
+
+return (
+   // ... phần giao diện bên dưới giữ nguyên
     <div style={styles.container}>
       {/* NAVBAR PHIÊN BẢN SANG TRỌNG */}
       <nav style={styles.navbar}>
-        <div style={styles.navLogo}>HÙNG LOUIS <span style={{color: '#6366f1'}}>STUDIO</span></div>
-        <div style={{display: 'flex', gap: '20px', alignItems: 'center'}}>
+        <div style={styles.navLogo}>HÙNG LOUIS <span style={{ color: '#6366f1' }}>STUDIO</span></div>
+        <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
           <div style={styles.visitBadge}>👁️ {totalVisits.toLocaleString()} lượt ghé thăm</div>
           <button style={styles.btnNav} onClick={connectWallet}>
-			{userAddress ? `🦊 ${userAddress}` : (authEmail ? `👤 ${authEmail.substring(0,8)}...` : '🔗 Kết nối Ví')}
-		  </button>
+            {userAddress ? `🦊 ${userAddress}` : (authEmail ? `👤 ${authEmail.substring(0, 8)}...` : '🔗 Kết nối Ví')}
+          </button>
 
-		  <button style={styles.btnNav} onClick={() => setShowAuthModal(true)}>
-            {authEmail ? `👤 ${authEmail.substring(0,8)}...` : '📧 Đăng nhập'}
+          <button style={styles.btnNav} onClick={() => setShowAuthModal(true)}>
+            {authEmail ? `👤 ${authEmail.substring(0, 8)}...` : '📧 Đăng nhập'}
           </button>
         </div>
       </nav>
@@ -217,73 +551,100 @@ async function fetchData() {
       {/* KHUNG PHÁT HÀNH - KÍNH MỜ */}
       <section style={styles.mintSection}>
         <div style={styles.card}>
-			<div style={styles.policyBox}>
-  <p>🛡️ <b>Chính sách SÀN GIAO DỊCH:</b></p>
-  <ul style={{fontSize: '14px', color: '#888', textAlign: 'left'}}>
-    <li>Phí duy trì hệ thống: <b>2.5%</b> (Trừ trực tiếp khi giao dịch thành công).</li>
-    <li>Phí tác quyền nghệ sĩ: <b>5%</b> cho mọi giao dịch thứ cấp (Còn gọi là Hoa hồng tái bản).</li>
-    <li>Nghệ sĩ tự chịu trách nhiệm về bản quyền âm nhạc đã tải lên.</li>
-  </ul>
-</div>
+          <div style={styles.policyBox}>
+            <p>🛡️ <b>Chính sách SÀN GIAO DỊCH:</b></p>
+            <ul style={{ fontSize: '14px', color: '#888', textAlign: 'left' }}>
+              <li>Phí duy trì hệ thống: <b>2.5%</b> (Trừ trực tiếp khi giao dịch thành công).</li>
+              <li>Phí tác quyền nghệ sĩ: <b>5%</b> cho mọi giao dịch thứ cấp (Còn gọi là Hoa hồng tái bản).</li>
+              <li>Nghệ sĩ tự chịu trách nhiệm về bản quyền âm nhạc đã tải lên.</li>
+            </ul>
+          </div>
 
           <h2 style={styles.cardTitle}>Phát hành NFT và Niêm yết</h2>
-          <p style={{color: '#888', fontSize: '12px', marginBottom: '15px'}}>
-        Đang đăng bài với tư cách: <span style={{color: '#6366f1'}}>{authEmail}</span>
-      </p>
-		  <input style={styles.input} placeholder="Tên bản nhạc" onChange={e => setNftData({...nftData, name: e.target.value})} />
-          <textarea style={{...styles.input, height: '60px', marginTop: '10px'}} placeholder="Mô tả" onChange={e => setNftData({...nftData, desc: e.target.value})} />
-          <div style={{display: 'flex', gap: '10px', marginTop: '10px'}}>
-             <input type="number" style={styles.input} placeholder="Giá ETH" onChange={e => setNftData({...nftData, price: e.target.value})} />
-             <input type="file" onChange={e => setSelectedFile(e.target.files)} />
+          <p style={{ color: '#888', fontSize: '12px', marginBottom: '15px' }}>
+            Đang đăng bài với tư cách: <span style={{ color: '#6366f1' }}>{authEmail}</span>
+          </p>
+          <input style={styles.input} placeholder="Tên bản nhạc" onChange={e => setNftData({ ...nftData, collection_name: e.target.value })} />
+          <textarea style={{ ...styles.input, height: '60px', marginTop: '10px' }} placeholder="Mô tả" onChange={e => setNftData({ ...nftData, desc: e.target.value })} />
+          <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+            <input type="number" style={styles.input} placeholder="Giá ETH" onChange={e => setNftData({ ...nftData, price: e.target.value })} />
+            <input type="file" onChange={e => setSelectedFile(e.target.files)} />
           </div>
-		  <div style={styles.fileUploadWrapper}>
-  <label htmlFor="file-upload" style={styles.customFileBtn}>
-    📁 {selectedFile ? selectedFile[0].name : "Chọn bản nhạc của bạn"}
-  </label>
-  <input 
-    id="file-upload" 
-    type="file" 
-    style={{ display: 'none' }} // Ẩn cái nút mặc định xấu xí đi
-    onChange={e => setSelectedFile(e.target.files)} 
-  />
-</div>
-		  
-          <button onClick={handleMintOneClick} disabled={loading} style={loading ? styles.btnDisabled : styles.btnMint}>
-            {loading ? 'ĐANG XỬ LÝ...' : 'PHÁT HÀNH NGAY'}
-			TẢI LÊN SÀN GIAO DỊCH
-          </button>
+          <div style={styles.fileUploadWrapper}>
+            <label htmlFor="file-upload" style={styles.customFileBtn}>
+              📁 {selectedFile ? selectedFile[0]?.name : "Chọn bản nhạc của bạn"}
+            </label>
+            <input
+              id="file-upload"
+              type="file"
+              style={{ display: 'none' }} // Ẩn cái nút mặc định xấu xí đi
+              onChange={e => setSelectedFile(e.target.files)}
+            />
+          </div>
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+          <input 
+              placeholder="Tên (VD: Folk Legacy)" 
+              value={collectionName}
+              onChange={(e) => setCollectionName(e.target.value)}
+              style={{ padding: '10px', borderRadius: '8px', background: '#111', color: 'white', border: '1px solid #00ffff' }}
+          />
+          <input 
+              placeholder="Ký hiệu (VD: FL)" 
+              value={collectionSymbol}
+              onChange={(e) => setCollectionSymbol(e.target.value)}
+              style={{ padding: '10px', borderRadius: '8px', background: '#111', color: 'white', border: '1px solid #00ffff', width: '100px' }}
+          />
+        </div>
+
+          <button 
+    onClick={deployAndMint} 
+    disabled={isLoading} 
+    style={{
+        padding: '15px 30px',
+        borderRadius: '12px',
+        fontWeight: 'bold',
+        cursor: isLoading ? 'not-allowed' : 'pointer',
+        background: isLoading ? '#334155' : '#00ffff', // Đổi màu khi bị khóa
+        color: isLoading ? '#94a3b8' : '#000',
+        opacity: isLoading ? 0.7 : 1,
+        transition: '0.3s'
+    }}
+>
+    {isLoading ? "ĐANG XỬ LÝ..." : "PHÁT HÀNH NGAY"}
+</button>
+
           <p style={styles.statusText}>{status}</p>
         </div>
-		
+
       </section>
 
-{/* KHU VỰC DÀNH CHO NGHỆ SĨ */}
-	  <section style={styles.mintSection}>
-    {authEmail ? (
-    <div style={styles.card}>
-      <h2 style={styles.cardTitle}>🚀 Đăng tác phẩm lên Sàn</h2>
-      <p style={styles.authInfo}>Đang đăng bài với tư cách: <b>{authEmail}</b></p>
-      
-      <input style={styles.input} placeholder="Tên bản nhạc..." onChange={e => setNftData({...nftData, name: e.target.value})} />
-      <input type="number" style={styles.input} placeholder="Giá niêm yết (ETH)" onChange={e => setNftData({...nftData, price: e.target.value})} />
-      
-      <div style={styles.uploadBox}>
-        <input type="file" id="file-upload" style={{display: 'none'}} onChange={e => setSelectedFile(e.target.files)} />
-        <label htmlFor="file-upload" style={styles.fileLabel}>
-          {selectedFile ? `✅ ${selectedFile.name}` : "📁 Chọn file nhạc/video (Max 50MB)"}
-        </label>
-      </div>
+      {/* KHU VỰC DÀNH CHO NGHỆ SĨ */}
+      <section style={styles.mintSection}>
+        {authEmail ? (
+          <div style={styles.card}>
+            <h2 style={styles.cardTitle}>🚀 Đăng tác phẩm lên Sàn</h2>
+            <p style={styles.authInfo}>Đang đăng bài với tư cách: <b>{authEmail}</b></p>
 
-      <button onClick={handleMintOneClick} style={styles.btnMint}>XUẤT BẢN LÊN SÀN GIAO DỊCH</button>
-    </div>
-    ) : (
-    <div style={styles.loginInvite}>
-      <h3>🎤 Bạn là nghệ sĩ ? Bạn muốn giới thiệu tác phẩm của mình với các nhà sưu tập, các fan hâm mộ và công chúng. Bạn lo lắng - e ngại, sợ tác quyền của mình bị xâm phạm ?</h3>
-      <p>Hãy đăng ký (tạo tài khoản) bằng Email hoặc ví crypto để tải lên tác phẩm của mình để được tiếp cận, chia sẻ với cộng đồng. Tác quyền của bạn sẽ được bảo vệ và tác phẩm của bạn sẽ được lưu truyền vĩnh viễn trên blockchain.</p>
-      <button style={styles.btnConnect} onClick={() => setShowAuthModal(true)}>Đăng nhập ngay</button>
-    </div>
-    )}
-	  </section>
+            <input style={styles.input} placeholder="Tên bản nhạc..." onChange={e => setNftData({ ...nftData, collection_name: e.target.value })} />
+            <input type="number" style={styles.input} placeholder="Giá niêm yết (ETH)" onChange={e => setNftData({ ...nftData, price: e.target.value })} />
+
+            <div style={styles.uploadBox}>
+              <input type="file" id="file-upload" style={{ display: 'none' }} onChange={e => setSelectedFile(e.target.files)} />
+              <label htmlFor="file-upload" style={styles.fileLabel}>
+                {selectedFile ? `✅ ${selectedFile.name}` : "📁 Chọn file nhạc/video (Max 50MB)"}
+              </label>
+            </div>
+
+            <button onClick={deployAndMint} style={styles.btnMint}>XUẤT BẢN LÊN SÀN GIAO DỊCH</button>
+          </div>
+        ) : (
+          <div style={styles.loginInvite}>
+            <h3>🎤 Bạn là nghệ sĩ ? Bạn muốn giới thiệu tác phẩm của mình với các nhà sưu tập, các fan hâm mộ và công chúng. Bạn lo lắng - e ngại, sợ tác quyền của mình bị xâm phạm ?</h3>
+            <p>Hãy đăng ký (tạo tài khoản) bằng Email hoặc ví crypto để tải lên tác phẩm của mình để được tiếp cận, chia sẻ với cộng đồng. Tác quyền của bạn sẽ được bảo vệ và tác phẩm của bạn sẽ được lưu truyền vĩnh viễn trên blockchain.</p>
+            <button style={styles.btnConnect} onClick={() => setShowAuthModal(true)}>Đăng nhập ngay</button>
+          </div>
+        )}
+      </section>
 
       {/* GRID MARKETPLACE CHÍNH */}
       <div style={styles.grid}>
@@ -294,10 +655,10 @@ async function fetchData() {
               <div style={styles.playOverlay} onClick={() => setCurrentTrack(nft)}>▶</div>
             </div>
             <div style={styles.nftContent}>
-              <h4 style={{marginBottom: '5px'}}>{nft.name}</h4>
-              <p style={{fontSize: '12px', color: '#666'}}>Nghệ sĩ: {nft.creator_email || 'Hùng Louis'}</p>
+              <h4 style={{ marginBottom: '5px' }}>{nft.collection_name}</h4>
+              <p style={{ fontSize: '12px', color: '#666' }}>Nghệ sĩ: {nft.creator_email || 'Hùng Louis'}</p>
               <div style={styles.cardFooter}>
-                <span style={{color: '#6366f1', fontWeight: 'bold'}}>{nft.price} ETH</span>
+                <span style={{ color: '#6366f1', fontWeight: 'bold' }}>{nft.price} ETH</span>
                 {nft.is_for_sale ? (
                   <button style={styles.btnBuy} onClick={() => handleVietQR(nft)}>🏦 Mua VNĐ</button>
                 ) : (
@@ -311,12 +672,12 @@ async function fetchData() {
 
       {/* LỊCH SỬ GIAO DỊCH */}
       <section style={styles.sectionFull}>
-        <h3 style={{textAlign: 'center', marginBottom: '25px', color: '#6366f1'}}>💎 Hoạt động giao dịch mới nhất</h3>
+        <h3 style={{ textAlign: 'center', marginBottom: '25px', color: '#6366f1' }}>💎 Hoạt động giao dịch mới nhất</h3>
         <div style={styles.historyBox}>
           {transactions.map(tx => (
             <div key={tx.id} style={styles.historyRow}>
-              <span>🛍️ <b>{tx.nft_name}</b> vừa được sở hữu bởi <i>{tx.buyer.substring(0,10)}...</i></span>
-              <span style={{color: '#6366f1', fontWeight: 'bold'}}>{tx.price} ETH</span>
+              <span>🛍️ <b>{tx.nft_name}</b> vừa được sở hữu bởi <i>{tx.buyer.substring(0, 10)}...</i></span>
+              <span style={{ color: '#6366f1', fontWeight: 'bold' }}>{tx.price} ETH</span>
             </div>
           ))}
         </div>
@@ -325,12 +686,12 @@ async function fetchData() {
       {/* BỘ SƯU TẬP CÁ NHÂN */}
       {authEmail && (
         <section style={styles.sectionFull}>
-          <h2 style={{textAlign: 'center', marginBottom: '25px'}}>🎨 Bộ sưu tập của bạn</h2>
+          <h2 style={{ textAlign: 'center', marginBottom: '25px' }}>🎨 Bộ sưu tập của bạn</h2>
           <div style={styles.gridSmall}>
             {myCollection.map(item => (
               <div key={item.id} style={styles.nftCardSmall}>
-                <img src={item.image_url} style={{width:'100%', height:'120px', objectFit:'cover'}} />
-                <p style={{padding:'10px', fontSize:'12px', color: '#fff'}}>{item.name}</p>
+                <img src={item.image_url} style={{ width: '100%', height: '120px', objectFit: 'cover' }} />
+                <p style={{ padding: '10px', fontSize: '12px', color: '#fff' }}>{item.name}</p>
               </div>
             ))}
           </div>
@@ -341,29 +702,29 @@ async function fetchData() {
       {showQRModal && (
         <div style={styles.modalOverlay} onClick={() => setShowQRModal(false)}>
           <div style={styles.modalContentQR} onClick={e => e.stopPropagation()}>
-            <div style={{display:'flex', justifyContent:'space-between', marginBottom:'15px'}}>
-              <h3 style={{margin:0}}>Thanh toán BIDV</h3>
-              <button onClick={() => setShowQRModal(false)} style={{background:'none', border:'none', color:'#fff', cursor:'pointer', fontSize:'24px'}}>✕</button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
+              <h3 style={{ margin: 0 }}>Thanh toán BIDV</h3>
+              <button onClick={() => setShowQRModal(false)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '24px' }}>✕</button>
             </div>
-		    <img 
-  src={activeQRUrl} 
-  alt="Mã QR BIDV"
-  style={{
-    width: '100%', 
-    height: 'auto', 
-    borderRadius: '15px', 
-    backgroundColor: '#fff', // Nền trắng giúp QR dễ quét hơn
-    padding: '15px',
-	display: 'block'
-  }}
-  onError={(e) => {
-    // Nếu vẫn lỗi, thử tải lại link đơn giản hơn
-    e.target.src = `https://vietqr.io`;
-  }}
-/>
+            <img
+              src={activeQRUrl}
+              alt="Mã QR BIDV"
+              style={{
+                width: '100%',
+                height: 'auto',
+                borderRadius: '15px',
+                backgroundColor: '#fff', // Nền trắng giúp QR dễ quét hơn
+                padding: '15px',
+                display: 'block'
+              }}
+              onError={(e) => {
+                // Nếu vẫn lỗi, thử tải lại link đơn giản hơn
+                e.target.src = `https://vietqr.io`;
+              }}
+            />
 
-            <p style={{fontSize:'12px', color:'#aaa', marginTop:'15px', textAlign:'center'}}>Quét mã để sở hữu bản quyền NFT</p>
-            <button style={styles.btnActionPrimary} onClick={() => setShowQRModal(false)} style={{marginTop:'15px'}}></button>
+            <p style={{ fontSize: '12px', color: '#aaa', marginTop: '15px', textAlign: 'center' }}>Quét mã để sở hữu bản quyền NFT</p>
+            <button style={styles.btnActionPrimary} onClick={() => setShowQRModal(false)} style={{ marginTop: '15px' }}></button>
           </div>
         </div>
       )}
@@ -381,17 +742,17 @@ async function fetchData() {
       {/* FIXED PLAYER */}
       {currentTrack && (
         <div style={styles.fixedPlayer}>
-          <div style={{display:'flex', alignItems:'center', gap:'15px'}}>
-            <img src={currentTrack.image_url} style={{width:'50px', height:'50px', borderRadius:'10px'}} />
-            <div><b style={{fontSize:'14px'}}>{currentTrack.name}</b></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+            <img src={currentTrack.image_url} style={{ width: '50px', height: '50px', borderRadius: '10px' }} />
+            <div><b style={{ fontSize: '14px' }}>{currentTrack.name}</b></div>
           </div>
-          <video src={currentTrack.image_url} autoPlay controls style={{height:'45px', borderRadius: '10px'}} />
-          <button onClick={() => setCurrentTrack(null)} style={{background:'none', border:'none', color:'#fff', fontSize:'20px'}}>✕</button>
+          <video src={currentTrack.image_url} autoPlay controls style={{ height: '45px', borderRadius: '10px' }} />
+          <button onClick={() => setCurrentTrack(null)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '20px' }}>✕</button>
         </div>
       )}
     </div>
-  );
-}
+  )
+};
 
 // --- HỆ THỐNG STYLES - BẢN GỐC ---
 const styles = {
@@ -433,7 +794,7 @@ const styles = {
   btnNavText: { background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '13px' },
   divider: { width: '1px', height: '15px', backgroundColor: '#333', margin: '0 15px' },
   btnConnect: { background: 'linear-gradient(90deg, #6366f1, #a855f7)', border: 'none', color: '#fff', padding: '8px 20px', borderRadius: '50px', fontWeight: 'bold', cursor: 'pointer' },
-  
+
   mintSection: { maxWidth: '600px', margin: '0 auto 60px' },
   card: { backgroundColor: '#111', padding: '30px', borderRadius: '24px', border: '1px solid #222' },
   input: { width: '100%', padding: '12px', backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: '#fff' },
@@ -467,7 +828,7 @@ const styles = {
   modalContent: { backgroundColor: '#111', padding: '40px', borderRadius: '32px', width: '400px', textAlign: 'center', border: '1px solid #333' },
   modalInput: { width: '100%', padding: '15px', backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '12px', color: '#fff' },
   btnActionPrimary: { width: '100%', padding: '15px', background: 'linear-gradient(90deg, #6366f1, #a855f7)', border: 'none', borderRadius: '12px', color: '#fff', fontWeight: 'bold', marginTop: '20px', cursor: 'pointer' },
-  
+
   toastContainer: { position: 'fixed', bottom: '100px', right: '30px', backgroundColor: '#6366f1', padding: '15px 25px', borderRadius: '15px', zIndex: 5000 },
   toastMessage: { color: '#fff', fontWeight: 'bold' },
   btnChat: {
@@ -529,7 +890,7 @@ const styles = {
   nftStats: { display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#aaa', margin: '15px 0' },
   priceText: { color: '#6366f1', fontWeight: 'bold', fontSize: '15px' },
   btnZalo: { width: '100%', padding: '12px', backgroundColor: '#0068ff', color: '#fff', border: 'none', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer' },
-// Thêm vào styles
+  // Thêm vào styles
   fileInputCustom: {
     display: 'inline-block',
     padding: '10px 20px',
@@ -610,14 +971,14 @@ const styles = {
   qrDesc: { fontSize: '14px', color: '#aaa', marginBottom: '20px' },
   qrImageContainer: { backgroundColor: '#fff', padding: '15px', borderRadius: '15px', marginBottom: '20px' },
   qrImage: { width: '100%', height: 'auto', display: 'block' },
-  btnDone: { 
-    width: '100%', 
-    padding: '12px', 
-    backgroundColor: '#6366f1', 
-    color: '#fff', 
-    border: 'none', 
-    borderRadius: '12px', 
-    fontWeight: 'bold', 
+  btnDone: {
+    width: '100%',
+    padding: '12px',
+    backgroundColor: '#6366f1',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '12px',
+    fontWeight: 'bold',
     marginTop: '15px',
     cursor: 'pointer'
   },
