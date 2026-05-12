@@ -1,12 +1,34 @@
-import hre from "hardhat";
-
 async function main() {
-  const SimpleNFT = await hre.ethers.getContractFactory("SimpleNFT");
-  const nft = await SimpleNFT.deploy();
 
-  await nft.waitForDeployment();
+  const MusicNFT =
+    await ethers.getContractFactory(
+      "MusicNFT"
+    );
 
-  console.log("NFT Contract deployed to:", await nft.target);
+  const musicNFT =
+    await MusicNFT.deploy();
+
+  await musicNFT.waitForDeployment();
+
+  console.log(
+    "MusicNFT:",
+    await musicNFT.getAddress()
+  );
+
+  const Marketplace =
+    await ethers.getContractFactory(
+      "NFTMarketplace"
+    );
+
+  const marketplace =
+    await Marketplace.deploy();
+
+  await marketplace.waitForDeployment();
+
+  console.log(
+    "Marketplace:",
+    await marketplace.getAddress()
+  );
 }
 
 main().catch((error) => {
