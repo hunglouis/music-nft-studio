@@ -51,7 +51,9 @@ export default function MusicNFTStudio() {
   const CONTRACT_ADDRESS = "0xdde62b6454e09c2d9ee759d7d3926508efef44b7";
   const [collectionName, setCollectionName] = useState("");
   const [currentCollectionAddress, setCurrentCollectionAddress] = useState("");
-
+  const [isConnected, setIsConnected] = useState(false);
+  
+  
   const connectWallet = async () => {
     if (typeof window.ethereum !== 'undefined') {
       try {
@@ -714,6 +716,95 @@ ${tokenId}
     setLoading(false);
   }
 };
+  // =================================================================
+  // ĐOẠN LOGIC 45 GIÂY: ĐẶT NGAY PHÍA TRÊN LỆNH RETURN GIAO DIỆN CỦA BẠN
+  // =================================================================
+  let currentAudio = null;
+  let currentCard = null;
+  let previewTimeout = null;
+
+  function playPreview(cardElement) {
+    // Lấy link tệp từ thuộc tính data-audio (Sử dụng đúng cột image_url của bạn)
+    const mediaUrl = cardElement.getAttribute('data-audio') || cardElement.getAttribute('data-image');
+    if (!mediaUrl) return;
+
+    // Chống phát đè bài cũ
+    if (currentAudio) {
+      if (typeof currentAudio.pause === 'function') currentAudio.pause();
+      if (currentCard) {
+        const oldVideo = currentCard.querySelector('.nft-video-preview');
+        if (oldVideo) { oldVideo.style.display = 'none'; oldVideo.pause(); }
+        const oldBtn = currentCard.querySelector('.play-btn-overlay');
+        if (oldBtn) oldBtn.innerHTML = '▶';
+      }
+    }
+
+    currentCard = cardElement;
+    const playButton = cardElement.querySelector('.play-btn-overlay');
+    if (playButton) playButton.innerHTML = '⏸';
+
+    // TỰ ĐỘNG NHẬN DIỆN MV (VIDEO CO CHUYỂN ĐỘNG) HOẶC AUDIO THƯỜNG
+    const videoPreview = cardElement.querySelector('.nft-video-preview');
+    
+    if (videoPreview) {
+      videoPreview.style.display = 'block'; // Hiện video đè lên poster ảnh
+      videoPreview.currentTime = 0;
+      videoPreview.muted = false; // Mở tiếng trực tiếp của MV
+      videoPreview.volume = 1.0;
+      videoPreview.play().catch(err => console.log("Chờ tương tác từ người dùng"));
+      currentAudio = videoPreview;
+    } else {
+      currentAudio = new Audio(mediaUrl);
+      currentAudio.play().catch(err => console.log("Chờ tương tác từ người dùng"));
+    }
+
+    // BỘ ĐẾM THỜI GIAN NGẮT BẢN QUYỀN TÁC GIẢ (CHẶN ĐÚNG 45 GIÂY)
+    clearTimeout(previewTimeout);
+    
+    // Nếu chưa kết nối ví (isConnected === false), chỉ cho nghe thử 45 giây
+    if (!isConnected) {
+      console.log("⚠️ Khách vãng lai chưa kết nối ví. Giới hạn 45 giây được kích hoạt.");
+      
+      previewTimeout = setTimeout(() => {
+        if (currentCard === cardElement) {
+          if (videoPreview) {
+            videoPreview.pause();
+            videoPreview.muted = true;
+            videoPreview.style.display = 'none'; // Ẩn video trả lại ảnh bìa tĩnh
+          } else if (currentAudio) {
+            currentAudio.pause();
+          }
+          if (playButton) playButton.innerHTML = '▶';
+          
+          // Thông báo văn minh, bảo vệ chất xám của nhạc sĩ
+          alert("🎵 Bạn đã nghe hết 45 giây thử nghiệm của tác phẩm. Vui lòng bấm nút 'Kết nối ví' ở góc trên để xác thực bản quyền và thưởng thức trọn vẹn ca khúc!");
+          currentAudio = null;
+          currentCard = null;
+        }
+      }, 45000); // Ngắt đúng giây thứ 45
+    } else {
+      console.log("✅ Đã kết nối ví. Hệ thống mở khóa toàn quyền nghe trọn vẹn ca khúc.");
+    }
+  }
+
+  function stopPreview(cardElement) {
+    if (currentCard === cardElement) {
+      const videoPreview = cardElement.querySelector('.nft-video-preview');
+      if (videoPreview) {
+        videoPreview.pause();
+        videoPreview.muted = true;
+        videoPreview.style.display = 'none';
+      } else if (currentAudio && typeof currentAudio.pause === 'function') {
+        currentAudio.pause();
+      }
+      const playButton = cardElement.querySelector('.play-btn-overlay');
+      if (playButton) playButton.innerHTML = '▶';
+      currentAudio = null;
+      currentCard = null;
+      clearTimeout(previewTimeout);
+    }
+  }
+  // =================================================================
 
 return (
    // ... phần giao diện bên dưới giữ nguyên
@@ -886,6 +977,7 @@ return (
       <div style={styles.grid}>
         {nfts.map((nft) => (
           <div key={nft.id} style={styles.nftCard} className="nft-card-hover">
+            <div className="music-card"    data-audio={nft.image_url} onMouseEnter={(e) => playPreview(e.currentTarget)} onMouseLeave={(e) => stopPreview(e.currentTarget)}>
             <div style={styles.imageWrapper}>
               <img src={nft.image_url} style={styles.nftImage} onClick={() => { setCurrentTrack(nft); }} />
               <div style={styles.playOverlay} onClick={() => setCurrentTrack(nft)}>▶</div>
@@ -901,6 +993,7 @@ return (
                   <button style={styles.btnOffer}>🤝 Đề nghị</button>
                 )}
               </div>
+            </div>
             </div>
           </div>
         ))}
