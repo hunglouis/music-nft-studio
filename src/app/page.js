@@ -3,8 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import axios from 'axios';
 import { ethers } from "ethers";
-const ALCHEMY_API_KEY =  process.env.NEXT_PUBLIC_ALCHEMY_KEY;
-const RPC_URL =  `https://eth-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}`;
+
+const ALCHEMY_API_KEY = process.env.NEXT_PUBLIC_ALCHEMY_KEY;
+const RPC_URL = `https://eth-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}`;
 
 // 1. ĐỊA CHỈ "CỖ MÁY" SÀN GIAO DỊCH (SMART CONTRACT CHỦ)
 const MARKETPLACE_ADDRESS = process.env.NEXT_PUBLIC_MARKETPLACE_ADDRESS;
@@ -16,8 +17,8 @@ const pinata_api_key = process.env.NEXT_PUBLIC_PINATA_KEY;
 const pinata_secret_api_key = process.env.NEXT_PUBLIC_PINATA_SECRET;
 
 
-const FACTORY_ADDRESS ="0xd5Cae8a1a2Ed9D49569f5C0C2E51FAA7Df86cd89";
-const FACTORY_ABI = [   {     "anonymous": false,     "inputs": [       {         "indexed": true,         "internalType": "address",         "name": "collectionAddress",         "type": "address"       },       {         "indexed": false,         "internalType": "string",         "name": "name",         "type": "string"       },       {         "indexed": false,         "internalType": "string",         "name": "symbol",         "type": "string"       },       {         "indexed": true,         "internalType": "address",         "name": "creator",         "type": "address"       },       {         "indexed": false,         "internalType": "uint256",         "name": "timestamp",         "type": "uint256"       }     ],     "name": "CollectionCreated",     "type": "event"   },   {     "inputs": [       {         "internalType": "uint256",         "name": "",         "type": "uint256"       }     ],     "name": "allCollections",     "outputs": [       {         "internalType": "address",         "name": "",         "type": "address"       }     ],     "stateMutability": "view",     "type": "function"   },   {     "inputs": [       {         "internalType": "string",         "name": "_name",         "type": "string"       },       {         "internalType": "string",         "name": "_symbol",         "type": "string"       }     ],     "name": "createCollection",     "outputs": [       {         "internalType": "address",         "name": "",         "type": "address"       }     ],     "stateMutability": "nonpayable",     "type": "function"   },   {     "inputs": [       {         "internalType": "address",         "name": "",         "type": "address"       },       {         "internalType": "uint256",         "name": "",         "type": "uint256"       }     ],     "name": "creatorCollections",     "outputs": [       {         "internalType": "address",         "name": "",         "type": "address"       }     ],     "stateMutability": "view",     "type": "function"   },   {     "inputs": [],     "name": "getAllCollections",     "outputs": [       {         "internalType": "address[]",         "name": "",         "type": "address[]"       }     ],     "stateMutability": "view",     "type": "function"   },   {     "inputs": [       {         "internalType": "address",         "name": "user",         "type": "address"       }     ],     "name": "getCollectionsByCreator",     "outputs": [       {         "internalType": "address[]",         "name": "",         "type": "address[]"       }     ],     "stateMutability": "view",     "type": "function"   } ];   
+const FACTORY_ADDRESS = "0xd5Cae8a1a2Ed9D49569f5C0C2E51FAA7Df86cd89";
+const FACTORY_ABI = [{ "anonymous": false, "inputs": [{ "indexed": true, "internalType": "address", "name": "collectionAddress", "type": "address" }, { "indexed": false, "internalType": "string", "name": "name", "type": "string" }, { "indexed": false, "internalType": "string", "name": "symbol", "type": "string" }, { "indexed": true, "internalType": "address", "name": "creator", "type": "address" }, { "indexed": false, "internalType": "uint256", "name": "timestamp", "type": "uint256" }], "name": "CollectionCreated", "type": "event" }, { "inputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "name": "allCollections", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" }, { "inputs": [{ "internalType": "string", "name": "_name", "type": "string" }, { "internalType": "string", "name": "_symbol", "type": "string" }], "name": "createCollection", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [{ "internalType": "address", "name": "", "type": "address" }, { "internalType": "uint256", "name": "", "type": "uint256" }], "name": "creatorCollections", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" }, { "inputs": [], "name": "getAllCollections", "outputs": [{ "internalType": "address[]", "name": "", "type": "address[]" }], "stateMutability": "view", "type": "function" }, { "inputs": [{ "internalType": "address", "name": "user", "type": "address" }], "name": "getCollectionsByCreator", "outputs": [{ "internalType": "address[]", "name": "", "type": "address[]" }], "stateMutability": "view", "type": "function" }];
 // Thay vì dùng trực tiếp, hãy dùng logic "Phòng thủ"
 const supabase = createClient(
   `https://hmvvjjiiaelcsfqgxbxv.supabase.co`,
@@ -52,8 +53,8 @@ export default function MusicNFTStudio() {
   const [collectionName, setCollectionName] = useState("");
   const [currentCollectionAddress, setCurrentCollectionAddress] = useState("");
   const [isConnected, setIsConnected] = useState(false);
-  
-  
+
+
   const connectWallet = async () => {
     if (typeof window.ethereum !== 'undefined') {
       try {
@@ -95,43 +96,43 @@ export default function MusicNFTStudio() {
   }
   const fetchMyCollections = async () => {
 
-  const { data } = await supabase
-    .from("collections")
-    .select("*")
-    .eq("creator_address", walletAddress);
+    const { data } = await supabase
+      .from("collections")
+      .select("*")
+      .eq("creator_address", walletAddress);
 
-  setMyCollections(data || []);
+    setMyCollections(data || []);
   };
   const fetchCollections = async () => {
 
-  const { data, error } = await supabase
-    .from("collections")
-    .select("*")
-    .order("created_at", { ascending: false });
+    const { data, error } = await supabase
+      .from("collections")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-  if (error) {
-    console.log(error);
-    return;
-  }
+    if (error) {
+      console.log(error);
+      return;
+    }
 
-  setCollections(data || []);
+    setCollections(data || []);
   };
 
 
   useEffect(() => {
-  fetchNFTs();
-  fetchTransactions();
-  fetchCollections();
-  handleVisitorCount();
-}, []);
+    fetchNFTs();
+    fetchTransactions();
+    fetchCollections();
+    handleVisitorCount();
+  }, []);
 
-useEffect(() => {
-  if(authEmail){
-    fetchMyCollections();
-  }
-}, [authEmail]);
+  useEffect(() => {
+    if (authEmail) {
+      fetchMyCollections();
+    }
+  }, [authEmail]);
 
-      useEffect(() => {
+  useEffect(() => {
     if (authEmail) fetchMyCollection();
   }, [authEmail]);
 
@@ -166,7 +167,7 @@ useEffect(() => {
     const description = encodeURIComponent(`MUA NFT ${nft.name.toUpperCase()}`);
 
     // Link ảnh QR BIDV chính xác cho số TK 3120464627
-    const qrUrl =`https://img.vietqr.io/image/BIDV-3120464627-compact2.png?amount=${amount}&addInfo=${description}&accountName=VU%20MANH%20HUNG`;
+    const qrUrl = `https://img.vietqr.io/image/BIDV-3120464627-compact2.png?amount=${amount}&addInfo=${description}&accountName=VU%20MANH%20HUNG`;
 
     setActiveQRUrl(qrUrl);
     setShowQRModal(true);
@@ -202,114 +203,58 @@ useEffect(() => {
     fetchTransactions();
   };
 
-const deployAndMint = async () => {
-
-  // =====================================================
-  // VALIDATE
-  // =====================================================
-
-  if (!collectionName) {
-    alert("Vui lòng nhập tên Collection");
-    return;
-  }
-
-  if (!collectionSymbol && !currentCollectionAddress) {
-    alert("Vui lòng nhập ký hiệu Collection");
-    return;
-  }
-
-  if (!nftData.name) {
-    alert("Vui lòng nhập tên NFT");
-    return;
-  }
-
-  if (!selectedFile || !selectedFile[0]) {
-    alert("Vui lòng chọn file nhạc");
-    return;
-  }
-
-  try {
-
-    setLoading(true);
-
-    console.log("🚀 START DEPLOY + MINT");
+  const deployAndMint = async () => {
 
     // =====================================================
-    // 1. UPLOAD AUDIO
+    // VALIDATE
     // =====================================================
 
-    setStatus("🚀 Đang upload audio lên IPFS...");
+    if (!collectionName) {
+      alert("Vui lòng nhập tên Collection");
+      return;
+    }
 
-    const formData = new FormData();
+    if (!collectionSymbol && !currentCollectionAddress) {
+      alert("Vui lòng nhập ký hiệu Collection");
+      return;
+    }
 
-    formData.append(
-      "file",
-      selectedFile[0]
-    );
+    if (!nftData.name) {
+      alert("Vui lòng nhập tên NFT");
+      return;
+    }
 
-    const uploadRes = await axios.post(
-      "https://api.pinata.cloud/pinning/pinFileToIPFS",
-      formData,
-      {
-        headers: {
-          "Content-Type":
-            "multipart/form-data",
+    if (!selectedFile || !selectedFile[0]) {
+      alert("Vui lòng chọn file nhạc");
+      return;
+    }
 
-          pinata_api_key:
-            process.env.NEXT_PUBLIC_PINATA_KEY,
+    try {
 
-          pinata_secret_api_key:
-            process.env.NEXT_PUBLIC_PINATA_SECRET,
-        },
-      }
-    );
+      setLoading(true);
 
-    const itemCID =
-      uploadRes.data.IpfsHash;
+      console.log("🚀 START DEPLOY + MINT");
 
-    const image_url =
-      `https://gateway.pinata.cloud/ipfs/${itemCID}`;
+      // =====================================================
+      // 1. UPLOAD AUDIO
+      // =====================================================
 
-    console.log(
-      "🎵 IMAGE URL =",
-      image_url
-    );
+      setStatus("🚀 Đang upload audio lên IPFS...");
 
-    // =====================================================
-    // 2. CREATE METADATA
-    // =====================================================
+      const formData = new FormData();
 
-    setStatus(
-      "🧠 Đang tạo metadata NFT..."
-    );
+      formData.append(
+        "file",
+        selectedFile[0]
+      );
 
-    const metadata = {
-
-      name: nftData.name,
-
-      description:
-        nftData.desc || "",
-     
-      
-      attributes: [
-        {
-          trait_type: "Artist",
-          value:
-            authEmail || "Unknown",
-        },
-      ],
-    };
-
-    // =====================================================
-    // 3. UPLOAD METADATA
-    // =====================================================
-
-    const metadataRes =
-      await axios.post(
-        "https://api.pinata.cloud/pinning/pinJSONToIPFS",
-        metadata,
+      const uploadRes = await axios.post(
+        "https://api.pinata.cloud/pinning/pinFileToIPFS",
+        formData,
         {
           headers: {
+            "Content-Type":
+              "multipart/form-data",
 
             pinata_api_key:
               process.env.NEXT_PUBLIC_PINATA_KEY,
@@ -320,362 +265,418 @@ const deployAndMint = async () => {
         }
       );
 
-    const metadataCID =
-      metadataRes.data.IpfsHash;
+      const itemCID =
+        uploadRes.data.IpfsHash;
 
-    const metadataURL =
-      `https://gateway.pinata.cloud/ipfs/${metadataCID}`;
-
-    console.log(
-      "🧠 METADATA URL =",
-      metadataURL
-    );
-
-    // =====================================================
-    // 4. CONNECT WALLET
-    // =====================================================
-
-    setStatus(
-      "🦊 Đang kết nối MetaMask..."
-    );
-
-    if (!window.ethereum) {
-      throw new Error(
-        "Bạn chưa cài MetaMask"
-      );
-    }
-
-    const provider =
-      new ethers.BrowserProvider(
-        window.ethereum
-      );
-
-    await provider.send(
-      "eth_requestAccounts",
-      []
-    );
-
-    const signer =
-      await provider.getSigner();
-
-    const walletAddress =
-      await signer.getAddress();
-
-    console.log(
-      "👛 WALLET =",
-      walletAddress
-    );
-
-    // =====================================================
-    // 5. FACTORY CONTRACT
-    // =====================================================
-
-    const factory =
-      new ethers.Contract(
-        FACTORY_ADDRESS,
-        FACTORY_ABI,
-        signer
-      );
-
-    // =====================================================
-    // 6. CREATE OR USE COLLECTION
-    // =====================================================
-
-    let collectionAddress =
-      currentCollectionAddress;
-
-    // =========================================
-    // CREATE NEW COLLECTION
-    // =========================================
-
-    if (!collectionAddress) {
-
-      setStatus(
-        "🏗️ Đang tạo Collection..."
-      );
+      const image_url =
+        `https://gateway.pinata.cloud/ipfs/${itemCID}`;
 
       console.log(
-        "🚀 CREATE COLLECTION"
+        "🎵 IMAGE URL =",
+        image_url
       );
 
-      const tx =
-        await factory.createCollection(
-          collectionName,
-          collectionSymbol,
+      // =====================================================
+      // 2. CREATE METADATA
+      // =====================================================
+
+      setStatus(
+        "🧠 Đang tạo metadata NFT..."
+      );
+
+      const metadata = {
+
+        name: nftData.name,
+
+        description:
+          nftData.desc || "",
+
+
+        attributes: [
+          {
+            trait_type: "Artist",
+            value:
+              authEmail || "Unknown",
+          },
+        ],
+      };
+
+      // =====================================================
+      // 3. UPLOAD METADATA
+      // =====================================================
+
+      const metadataRes =
+        await axios.post(
+          "https://api.pinata.cloud/pinning/pinJSONToIPFS",
+          metadata,
+          {
+            headers: {
+
+              pinata_api_key:
+                process.env.NEXT_PUBLIC_PINATA_KEY,
+
+              pinata_secret_api_key:
+                process.env.NEXT_PUBLIC_PINATA_SECRET,
+            },
+          }
+        );
+
+      const metadataCID =
+        metadataRes.data.IpfsHash;
+
+      const metadataURL =
+        `https://gateway.pinata.cloud/ipfs/${metadataCID}`;
+
+      console.log(
+        "🧠 METADATA URL =",
+        metadataURL
+      );
+
+      // =====================================================
+      // 4. CONNECT WALLET
+      // =====================================================
+
+      setStatus(
+        "🦊 Đang kết nối MetaMask..."
+      );
+
+      if (!window.ethereum) {
+        throw new Error(
+          "Bạn chưa cài MetaMask"
+        );
+      }
+
+      const provider =
+        new ethers.BrowserProvider(
+          window.ethereum
+        );
+
+      await provider.send(
+        "eth_requestAccounts",
+        []
+      );
+
+      const signer =
+        await provider.getSigner();
+
+      const walletAddress =
+        await signer.getAddress();
+
+      console.log(
+        "👛 WALLET =",
+        walletAddress
+      );
+
+      // =====================================================
+      // 5. FACTORY CONTRACT
+      // =====================================================
+
+      const factory =
+        new ethers.Contract(
+          FACTORY_ADDRESS,
+          FACTORY_ABI,
+          signer
+        );
+
+      // =====================================================
+      // 6. CREATE OR USE COLLECTION
+      // =====================================================
+
+      let collectionAddress =
+        currentCollectionAddress;
+
+      // =========================================
+      // CREATE NEW COLLECTION
+      // =========================================
+
+      if (!collectionAddress) {
+
+        setStatus(
+          "🏗️ Đang tạo Collection..."
+        );
+
+        console.log(
+          "🚀 CREATE COLLECTION"
+        );
+
+        const tx =
+          await factory.createCollection(
+            collectionName,
+            collectionSymbol,
+            {
+              gasLimit: 3000000
+            }
+          );
+
+        console.log(
+          "⛓️ TX HASH =",
+          tx.hash
+        );
+
+        const receipt =
+          await tx.wait();
+
+        console.log(
+          "📦 RECEIPT =",
+          receipt
+        );
+
+        // =====================================
+        // PARSE EVENT
+        // =====================================
+
+        for (
+          const log of receipt.logs
+        ) {
+
+          try {
+
+            const parsed =
+              factory.interface.parseLog(
+                log
+              );
+
+            console.log(
+              "🧠 PARSED =",
+              parsed
+            );
+
+            if (
+              parsed &&
+              parsed.name ===
+              "CollectionCreated"
+            ) {
+
+              collectionAddress =
+                parsed.args.collectionAddress;
+
+              console.log(
+                "🎉 NEW COLLECTION =",
+                collectionAddress
+              );
+            }
+
+          } catch (err) {
+            console.log(
+              "SKIP LOG"
+            );
+          }
+        }
+
+        if (!collectionAddress) {
+
+          throw new Error(
+            "Không lấy được Collection Address"
+          );
+        }
+
+        // =====================================
+        // SAVE COLLECTION
+        // =====================================
+
+        setStatus(
+          "💾 Đang lưu Collection..."
+        );
+
+        const {
+          error:
+          collectionError
+        } = await supabase
+          .from("collections")
+          .insert([
+            {
+              collection_name:
+                collectionName,
+
+              symbol:
+                collectionSymbol,
+
+              contract_address:
+                collectionAddress,
+
+              creator_address:
+                walletAddress,
+            },
+          ]);
+
+        if (collectionError) {
+          console.log(
+            collectionError
+          );
+        }
+      }
+
+      // =====================================================
+      // 7. ATTACH CONTRACT CON
+      // =====================================================
+
+      setStatus(
+        "🔗 Đang kết nối Collection..."
+      );
+
+      const STUDIO_NFT_ABI = [{ "inputs": [{ "internalType": "string", "name": "name", "type": "string" }, { "internalType": "string", "name": "symbol", "type": "string" }, { "internalType": "address", "name": "_creator", "type": "address" }], "stateMutability": "nonpayable", "type": "constructor" }, { "inputs": [{ "internalType": "address", "name": "sender", "type": "address" }, { "internalType": "uint256", "name": "tokenId", "type": "uint256" }, { "internalType": "address", "name": "owner", "type": "address" }], "name": "ERC721IncorrectOwner", "type": "error" }, { "inputs": [{ "internalType": "address", "name": "operator", "type": "address" }, { "internalType": "uint256", "name": "tokenId", "type": "uint256" }], "name": "ERC721InsufficientApproval", "type": "error" }, { "inputs": [{ "internalType": "address", "name": "approver", "type": "address" }], "name": "ERC721InvalidApprover", "type": "error" }, { "inputs": [{ "internalType": "address", "name": "operator", "type": "address" }], "name": "ERC721InvalidOperator", "type": "error" }, { "inputs": [{ "internalType": "address", "name": "owner", "type": "address" }], "name": "ERC721InvalidOwner", "type": "error" }, { "inputs": [{ "internalType": "address", "name": "receiver", "type": "address" }], "name": "ERC721InvalidReceiver", "type": "error" }, { "inputs": [{ "internalType": "address", "name": "sender", "type": "address" }], "name": "ERC721InvalidSender", "type": "error" }, { "inputs": [{ "internalType": "uint256", "name": "tokenId", "type": "uint256" }], "name": "ERC721NonexistentToken", "type": "error" }, { "anonymous": false, "inputs": [{ "indexed": true, "internalType": "address", "name": "owner", "type": "address" }, { "indexed": true, "internalType": "address", "name": "approved", "type": "address" }, { "indexed": true, "internalType": "uint256", "name": "tokenId", "type": "uint256" }], "name": "Approval", "type": "event" }, { "anonymous": false, "inputs": [{ "indexed": true, "internalType": "address", "name": "owner", "type": "address" }, { "indexed": true, "internalType": "address", "name": "operator", "type": "address" }, { "indexed": false, "internalType": "bool", "name": "approved", "type": "bool" }], "name": "ApprovalForAll", "type": "event" }, { "anonymous": false, "inputs": [{ "indexed": false, "internalType": "uint256", "name": "_fromTokenId", "type": "uint256" }, { "indexed": false, "internalType": "uint256", "name": "_toTokenId", "type": "uint256" }], "name": "BatchMetadataUpdate", "type": "event" }, { "anonymous": false, "inputs": [{ "indexed": false, "internalType": "uint256", "name": "_tokenId", "type": "uint256" }], "name": "MetadataUpdate", "type": "event" }, { "anonymous": false, "inputs": [{ "indexed": true, "internalType": "address", "name": "collectionAddress", "type": "address" }, { "indexed": true, "internalType": "uint256", "name": "tokenId", "type": "uint256" }, { "indexed": true, "internalType": "address", "name": "owner", "type": "address" }, { "indexed": false, "internalType": "string", "name": "uri", "type": "string" }, { "indexed": false, "internalType": "uint256", "name": "timestamp", "type": "uint256" }], "name": "NFTMinted", "type": "event" }, { "anonymous": false, "inputs": [{ "indexed": true, "internalType": "address", "name": "from", "type": "address" }, { "indexed": true, "internalType": "address", "name": "to", "type": "address" }, { "indexed": true, "internalType": "uint256", "name": "tokenId", "type": "uint256" }], "name": "Transfer", "type": "event" }, { "inputs": [{ "internalType": "address", "name": "to", "type": "address" }, { "internalType": "uint256", "name": "tokenId", "type": "uint256" }], "name": "approve", "outputs": [], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [{ "internalType": "address", "name": "owner", "type": "address" }], "name": "balanceOf", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" }, { "inputs": [], "name": "creator", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" }, { "inputs": [{ "internalType": "uint256", "name": "tokenId", "type": "uint256" }], "name": "getApproved", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" }, { "inputs": [{ "internalType": "address", "name": "owner", "type": "address" }, { "internalType": "address", "name": "operator", "type": "address" }], "name": "isApprovedForAll", "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }], "stateMutability": "view", "type": "function" }, { "inputs": [{ "internalType": "address", "name": "to", "type": "address" }, { "internalType": "string", "name": "uri", "type": "string" }], "name": "mintNFT", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [], "name": "name", "outputs": [{ "internalType": "string", "name": "", "type": "string" }], "stateMutability": "view", "type": "function" }, { "inputs": [{ "internalType": "uint256", "name": "tokenId", "type": "uint256" }], "name": "ownerOf", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" }, { "inputs": [{ "internalType": "address", "name": "from", "type": "address" }, { "internalType": "address", "name": "to", "type": "address" }, { "internalType": "uint256", "name": "tokenId", "type": "uint256" }], "name": "safeTransferFrom", "outputs": [], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [{ "internalType": "address", "name": "from", "type": "address" }, { "internalType": "address", "name": "to", "type": "address" }, { "internalType": "uint256", "name": "tokenId", "type": "uint256" }, { "internalType": "bytes", "name": "data", "type": "bytes" }], "name": "safeTransferFrom", "outputs": [], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [{ "internalType": "address", "name": "operator", "type": "address" }, { "internalType": "bool", "name": "approved", "type": "bool" }], "name": "setApprovalForAll", "outputs": [], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [{ "internalType": "bytes4", "name": "interfaceId", "type": "bytes4" }], "name": "supportsInterface", "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }], "stateMutability": "view", "type": "function" }, { "inputs": [], "name": "symbol", "outputs": [{ "internalType": "string", "name": "", "type": "string" }], "stateMutability": "view", "type": "function" }, { "inputs": [{ "internalType": "uint256", "name": "tokenId", "type": "uint256" }], "name": "tokenURI", "outputs": [{ "internalType": "string", "name": "", "type": "string" }], "stateMutability": "view", "type": "function" }, { "inputs": [], "name": "totalSupply", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" }, { "inputs": [{ "internalType": "address", "name": "from", "type": "address" }, { "internalType": "address", "name": "to", "type": "address" }, { "internalType": "uint256", "name": "tokenId", "type": "uint256" }], "name": "transferFrom", "outputs": [], "stateMutability": "nonpayable", "type": "function" }];
+
+      const collectionContract =
+        new ethers.Contract(
+          collectionAddress,
+          STUDIO_NFT_ABI,
+          signer
+        );
+
+      console.log(
+        "✅ COLLECTION READY"
+      );
+
+      // =====================================================
+      // 8. MINT NFT
+      // =====================================================
+
+      setStatus(
+        "⚡ Đang mint NFT..."
+      );
+
+      const mintTx =
+        await collectionContract.mintNFT(
+          walletAddress,
+          metadataURL,
           {
             gasLimit: 3000000
           }
         );
 
       console.log(
-        "⛓️ TX HASH =",
-        tx.hash
+        "⛓️ MINT TX =",
+        mintTx.hash
       );
 
-      const receipt =
-        await tx.wait();
+      const mintReceipt =
+        await mintTx.wait();
 
       console.log(
-        "📦 RECEIPT =",
-        receipt
+        "📦 MINT RECEIPT =",
+        mintReceipt
       );
 
-      // =====================================
-      // PARSE EVENT
-      // =====================================
+      // =====================================================
+      // 9. GET TOKEN ID
+      // =====================================================
+
+      let tokenId = 0;
 
       for (
-        const log of receipt.logs
+        const log of mintReceipt.logs
       ) {
 
         try {
 
           const parsed =
-            factory.interface.parseLog(
+            collectionContract.interface.parseLog(
               log
             );
 
           console.log(
-            "🧠 PARSED =",
+            "🎯 NFT EVENT =",
             parsed
           );
 
-          if (
-            parsed &&
-            parsed.name ===
-              "CollectionCreated"
-          ) {
+        } catch (err) { }
 
-            collectionAddress =
-              parsed.args.collectionAddress;
+        // =====================================
+        // ERC721 TRANSFER EVENT
+        // =====================================
 
-            console.log(
-              "🎉 NEW COLLECTION =",
-              collectionAddress
-            );
-          }
+        if (
+          log.topics &&
+          log.topics.length > 3
+        ) {
 
-        } catch (err) {
-          console.log(
-            "SKIP LOG"
-          );
+          try {
+
+            tokenId =
+              parseInt(
+                log.topics[3],
+                16
+              );
+
+          } catch (err) { }
         }
       }
 
-      if (!collectionAddress) {
+      console.log(
+        "🎉 TOKEN ID =",
+        tokenId
+      );
 
-        throw new Error(
-          "Không lấy được Collection Address"
-        );
-      }
-
-      // =====================================
-      // SAVE COLLECTION
-      // =====================================
+      // =====================================================
+      // 10. SAVE ITEM
+      // =====================================================
 
       setStatus(
-        "💾 Đang lưu Collection..."
+        "💾 Đang lưu NFT..."
       );
 
       const {
-        error:
-          collectionError
+        error: itemError
       } = await supabase
-        .from("collections")
+        .from("items")
         .insert([
           {
-            collection_name:
-              collectionName,
 
-            symbol:
-              collectionSymbol,
+            name:
+              nftData.name,
+
+            description:
+              nftData.desc || "",
+
+            image_url:
+              image_url,
+
+            metadata_url:
+              metadataURL,
+
+            token_id:
+              tokenId,
 
             contract_address:
               collectionAddress,
 
+            collection_name:
+              collectionName,
+
             creator_address:
               walletAddress,
+
+            price:
+              nftData.price,
+
+            is_listed:
+              true,
           },
         ]);
 
-      if (collectionError) {
-        console.log(
-          collectionError
-        );
-      }
-    }
-
-    // =====================================================
-    // 7. ATTACH CONTRACT CON
-    // =====================================================
-
-    setStatus(
-      "🔗 Đang kết nối Collection..."
-    );
-
-    const STUDIO_NFT_ABI = [   {     "inputs": [       {         "internalType": "string",         "name": "name",         "type": "string"       },       {         "internalType": "string",         "name": "symbol",         "type": "string"       },       {         "internalType": "address",         "name": "_creator",         "type": "address"       }     ],     "stateMutability": "nonpayable",     "type": "constructor"   },   {     "inputs": [       {         "internalType": "address",         "name": "sender",         "type": "address"       },       {         "internalType": "uint256",         "name": "tokenId",         "type": "uint256"       },       {         "internalType": "address",         "name": "owner",         "type": "address"       }     ],     "name": "ERC721IncorrectOwner",     "type": "error"   },   {     "inputs": [       {         "internalType": "address",         "name": "operator",         "type": "address"       },       {         "internalType": "uint256",         "name": "tokenId",         "type": "uint256"       }     ],     "name": "ERC721InsufficientApproval",     "type": "error"   },   {     "inputs": [       {         "internalType": "address",         "name": "approver",         "type": "address"       }     ],     "name": "ERC721InvalidApprover",     "type": "error"   },   {     "inputs": [       {         "internalType": "address",         "name": "operator",         "type": "address"       }     ],     "name": "ERC721InvalidOperator",     "type": "error"   },   {     "inputs": [       {         "internalType": "address",         "name": "owner",         "type": "address"       }     ],     "name": "ERC721InvalidOwner",     "type": "error"   },   {     "inputs": [       {         "internalType": "address",         "name": "receiver",         "type": "address"       }     ],     "name": "ERC721InvalidReceiver",     "type": "error"   },   {     "inputs": [       {         "internalType": "address",         "name": "sender",         "type": "address"       }     ],     "name": "ERC721InvalidSender",     "type": "error"   },   {     "inputs": [       {         "internalType": "uint256",         "name": "tokenId",         "type": "uint256"       }     ],     "name": "ERC721NonexistentToken",     "type": "error"   },   {     "anonymous": false,     "inputs": [       {         "indexed": true,         "internalType": "address",         "name": "owner",         "type": "address"       },       {         "indexed": true,         "internalType": "address",         "name": "approved",         "type": "address"       },       {         "indexed": true,         "internalType": "uint256",         "name": "tokenId",         "type": "uint256"       }     ],     "name": "Approval",     "type": "event"   },   {     "anonymous": false,     "inputs": [       {         "indexed": true,         "internalType": "address",         "name": "owner",         "type": "address"       },       {         "indexed": true,         "internalType": "address",         "name": "operator",         "type": "address"       },       {         "indexed": false,         "internalType": "bool",         "name": "approved",         "type": "bool"       }     ],     "name": "ApprovalForAll",     "type": "event"   },   {     "anonymous": false,     "inputs": [       {         "indexed": false,         "internalType": "uint256",         "name": "_fromTokenId",         "type": "uint256"       },       {         "indexed": false,         "internalType": "uint256",         "name": "_toTokenId",         "type": "uint256"       }     ],     "name": "BatchMetadataUpdate",     "type": "event"   },   {     "anonymous": false,     "inputs": [       {         "indexed": false,         "internalType": "uint256",         "name": "_tokenId",         "type": "uint256"       }     ],     "name": "MetadataUpdate",     "type": "event"   },   {     "anonymous": false,     "inputs": [       {         "indexed": true,         "internalType": "address",         "name": "collectionAddress",         "type": "address"       },       {         "indexed": true,         "internalType": "uint256",         "name": "tokenId",         "type": "uint256"       },       {         "indexed": true,         "internalType": "address",         "name": "owner",         "type": "address"       },       {         "indexed": false,         "internalType": "string",         "name": "uri",         "type": "string"       },       {         "indexed": false,         "internalType": "uint256",         "name": "timestamp",         "type": "uint256"       }     ],     "name": "NFTMinted",     "type": "event"   },   {     "anonymous": false,     "inputs": [       {         "indexed": true,         "internalType": "address",         "name": "from",         "type": "address"       },       {         "indexed": true,         "internalType": "address",         "name": "to",         "type": "address"       },       {         "indexed": true,         "internalType": "uint256",         "name": "tokenId",         "type": "uint256"       }     ],     "name": "Transfer",     "type": "event"   },   {     "inputs": [       {         "internalType": "address",         "name": "to",         "type": "address"       },       {         "internalType": "uint256",         "name": "tokenId",         "type": "uint256"       }     ],     "name": "approve",     "outputs": [],     "stateMutability": "nonpayable",     "type": "function"   },   {     "inputs": [       {         "internalType": "address",         "name": "owner",         "type": "address"       }     ],     "name": "balanceOf",     "outputs": [       {         "internalType": "uint256",         "name": "",         "type": "uint256"       }     ],     "stateMutability": "view",     "type": "function"   },   {     "inputs": [],     "name": "creator",     "outputs": [       {         "internalType": "address",         "name": "",         "type": "address"       }     ],     "stateMutability": "view",     "type": "function"   },   {     "inputs": [       {         "internalType": "uint256",         "name": "tokenId",         "type": "uint256"       }     ],     "name": "getApproved",     "outputs": [       {         "internalType": "address",         "name": "",         "type": "address"       }     ],     "stateMutability": "view",     "type": "function"   },   {     "inputs": [       {         "internalType": "address",         "name": "owner",         "type": "address"       },       {         "internalType": "address",         "name": "operator",         "type": "address"       }     ],     "name": "isApprovedForAll",     "outputs": [       {         "internalType": "bool",         "name": "",         "type": "bool"       }     ],     "stateMutability": "view",     "type": "function"   },   {     "inputs": [       {         "internalType": "address",         "name": "to",         "type": "address"       },       {         "internalType": "string",         "name": "uri",         "type": "string"       }     ],     "name": "mintNFT",     "outputs": [       {         "internalType": "uint256",         "name": "",         "type": "uint256"       }     ],     "stateMutability": "nonpayable",     "type": "function"   },   {     "inputs": [],     "name": "name",     "outputs": [       {         "internalType": "string",         "name": "",         "type": "string"       }     ],     "stateMutability": "view",     "type": "function"   },   {     "inputs": [       {         "internalType": "uint256",         "name": "tokenId",         "type": "uint256"       }     ],     "name": "ownerOf",     "outputs": [       {         "internalType": "address",         "name": "",         "type": "address"       }     ],     "stateMutability": "view",     "type": "function"   },   {     "inputs": [       {         "internalType": "address",         "name": "from",         "type": "address"       },       {         "internalType": "address",         "name": "to",         "type": "address"       },       {         "internalType": "uint256",         "name": "tokenId",         "type": "uint256"       }     ],     "name": "safeTransferFrom",     "outputs": [],     "stateMutability": "nonpayable",     "type": "function"   },   {     "inputs": [       {         "internalType": "address",         "name": "from",         "type": "address"       },       {         "internalType": "address",         "name": "to",         "type": "address"       },       {         "internalType": "uint256",         "name": "tokenId",         "type": "uint256"       },       {         "internalType": "bytes",         "name": "data",         "type": "bytes"       }     ],     "name": "safeTransferFrom",     "outputs": [],     "stateMutability": "nonpayable",     "type": "function"   },   {     "inputs": [       {         "internalType": "address",         "name": "operator",         "type": "address"       },       {         "internalType": "bool",         "name": "approved",         "type": "bool"       }     ],     "name": "setApprovalForAll",     "outputs": [],     "stateMutability": "nonpayable",     "type": "function"   },   {     "inputs": [       {         "internalType": "bytes4",         "name": "interfaceId",         "type": "bytes4"       }     ],     "name": "supportsInterface",     "outputs": [       {         "internalType": "bool",         "name": "",         "type": "bool"       }     ],     "stateMutability": "view",     "type": "function"   },   {     "inputs": [],     "name": "symbol",     "outputs": [       {         "internalType": "string",         "name": "",         "type": "string"       }     ],     "stateMutability": "view",     "type": "function"   },   {     "inputs": [       {         "internalType": "uint256",         "name": "tokenId",         "type": "uint256"       }     ],     "name": "tokenURI",     "outputs": [       {         "internalType": "string",         "name": "",         "type": "string"       }     ],     "stateMutability": "view",     "type": "function"   },   {     "inputs": [],     "name": "totalSupply",     "outputs": [       {         "internalType": "uint256",         "name": "",         "type": "uint256"       }     ],     "stateMutability": "view",     "type": "function"   },   {     "inputs": [       {         "internalType": "address",         "name": "from",         "type": "address"       },       {         "internalType": "address",         "name": "to",         "type": "address"       },       {         "internalType": "uint256",         "name": "tokenId",         "type": "uint256"       }     ],     "name": "transferFrom",     "outputs": [],     "stateMutability": "nonpayable",     "type": "function"   } ];
-
-    const collectionContract =
-      new ethers.Contract(
-        collectionAddress,
-        STUDIO_NFT_ABI,
-        signer
-      );
-
-    console.log(
-      "✅ COLLECTION READY"
-    );
-
-    // =====================================================
-    // 8. MINT NFT
-    // =====================================================
-
-    setStatus(
-      "⚡ Đang mint NFT..."
-    );
-
-    const mintTx =
-      await collectionContract.mintNFT(
-        walletAddress,
-        metadataURL,
-        {
-          gasLimit: 3000000
-        }
-      );
-
-    console.log(
-      "⛓️ MINT TX =",
-      mintTx.hash
-    );
-
-    const mintReceipt =
-      await mintTx.wait();
-
-    console.log(
-      "📦 MINT RECEIPT =",
-      mintReceipt
-    );
-
-    // =====================================================
-    // 9. GET TOKEN ID
-    // =====================================================
-
-    let tokenId = 0;
-
-    for (
-      const log of mintReceipt.logs
-    ) {
-
-      try {
-
-        const parsed =
-          collectionContract.interface.parseLog(
-            log
-          );
+      if (itemError) {
 
         console.log(
-          "🎯 NFT EVENT =",
-          parsed
+          "❌ ITEM ERROR =",
+          itemError
         );
 
-      } catch (err) {}
-
-      // =====================================
-      // ERC721 TRANSFER EVENT
-      // =====================================
-
-      if (
-        log.topics &&
-        log.topics.length > 3
-      ) {
-
-        try {
-
-          tokenId =
-            parseInt(
-              log.topics[3],
-              16
-            );
-
-        } catch (err) {}
+        throw itemError;
       }
-    }
 
-    console.log(
-      "🎉 TOKEN ID =",
-      tokenId
-    );
+      // =====================================================
+      // DONE
+      // =====================================================
 
-    // =====================================================
-    // 10. SAVE ITEM
-    // =====================================================
-
-    setStatus(
-      "💾 Đang lưu NFT..."
-    );
-
-    const {
-      error: itemError
-    } = await supabase
-      .from("items")
-      .insert([
-        {
-
-          name:
-            nftData.name,
-
-          description:
-            nftData.desc || "",
-
-          image_url:
-            image_url,
-          
-          metadata_url:
-            metadataURL,
-
-          token_id:
-            tokenId,
-
-          contract_address:
-            collectionAddress,
-
-          collection_name:
-            collectionName,
-
-          creator_address:
-            walletAddress,
-
-          price:
-            nftData.price,
-
-          is_for_sale:
-            true,
-        },
-      ]);
-
-    if (itemError) {
-
-      console.log(
-        "❌ ITEM ERROR =",
-        itemError
+      setCurrentCollectionAddress(
+        collectionAddress
       );
 
-      throw itemError;
-    }
+      setStatus(
+        "🎉 NFT ĐÃ MINT THÀNH CÔNG"
+      );
 
-    // =====================================================
-    // DONE
-    // =====================================================
-
-    setCurrentCollectionAddress(
-      collectionAddress
-    );
-
-    setStatus(
-      "🎉 NFT ĐÃ MINT THÀNH CÔNG"
-    );
-
-    alert(`
+      alert(`
 🎉 NFT ĐÃ MINT THÀNH CÔNG
 
 COLLECTION:
@@ -691,31 +692,31 @@ TOKEN ID:
 ${tokenId}
 `);
 
-    fetchNFTs();
+      fetchNFTs();
 
-    fetchMyCollection();
+      fetchMyCollection();
 
-    fetchCollections();
+      fetchCollections();
 
-  } catch (err) {
+    } catch (err) {
 
-    console.error(err);
+      console.error(err);
 
-    alert(
-      err.reason ||
-      err.message ||
-      "Mint NFT thất bại"
-    );
+      alert(
+        err.reason ||
+        err.message ||
+        "Mint NFT thất bại"
+      );
 
-    setStatus(
-      "❌ Có lỗi xảy ra"
-    );
+      setStatus(
+        "❌ Có lỗi xảy ra"
+      );
 
-  } finally {
+    } finally {
 
-    setLoading(false);
-  }
-};
+      setLoading(false);
+    }
+  };
   // =================================================================
   // ĐOẠN LOGIC 45 GIÂY: ĐẶT NGAY PHÍA TRÊN LỆNH RETURN GIAO DIỆN CỦA BẠN
   // =================================================================
@@ -745,7 +746,7 @@ ${tokenId}
 
     // TỰ ĐỘNG NHẬN DIỆN MV (VIDEO CO CHUYỂN ĐỘNG) HOẶC AUDIO THƯỜNG
     const videoPreview = cardElement.querySelector('.nft-video-preview');
-    
+
     if (videoPreview) {
       videoPreview.style.display = 'block'; // Hiện video đè lên poster ảnh
       videoPreview.currentTime = 0;
@@ -760,11 +761,11 @@ ${tokenId}
 
     // BỘ ĐẾM THỜI GIAN NGẮT BẢN QUYỀN TÁC GIẢ (CHẶN ĐÚNG 45 GIÂY)
     clearTimeout(previewTimeout);
-    
+
     // Nếu chưa kết nối ví (isConnected === false), chỉ cho nghe thử 45 giây
     if (!isConnected) {
       console.log("⚠️ Khách vãng lai chưa kết nối ví. Giới hạn 45 giây được kích hoạt.");
-      
+
       previewTimeout = setTimeout(() => {
         if (currentCard === cardElement) {
           if (videoPreview) {
@@ -775,7 +776,7 @@ ${tokenId}
             currentAudio.pause();
           }
           if (playButton) playButton.innerHTML = '▶';
-          
+
           // Thông báo văn minh, bảo vệ chất xám của nhạc sĩ
           alert("🎵 Bạn đã nghe hết 45 giây thử nghiệm của tác phẩm. Vui lòng bấm nút 'Kết nối ví' ở góc trên để xác thực bản quyền và thưởng thức trọn vẹn ca khúc!");
           currentAudio = null;
@@ -806,8 +807,8 @@ ${tokenId}
   }
   // =================================================================
 
-return (
-   // ... phần giao diện bên dưới giữ nguyên
+  return (
+    // ... phần giao diện bên dưới giữ nguyên
     <div style={styles.container}>
       {/* NAVBAR PHIÊN BẢN SANG TRỌNG */}
       <nav style={styles.navbar}>
@@ -840,7 +841,7 @@ return (
           <p style={{ color: '#888', fontSize: '12px', marginBottom: '15px' }}>
             Đang đăng bài với tư cách: <span style={{ color: '#6366f1' }}>{authEmail}</span>
           </p>
-          <input placeholder="BỘ SƯU TẬP" value={collectionName} onChange={(e) => setCollectionName(e.target.value) } />
+          <input placeholder="BỘ SƯU TẬP" value={collectionName} onChange={(e) => setCollectionName(e.target.value)} />
           <textarea style={{ ...styles.input, height: '60px', marginTop: '10px' }} placeholder="Mô tả" onChange={e => setNftData({ ...nftData, desc: e.target.value })} />
           <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
             <input type="number" style={styles.input} placeholder="Giá ETH" onChange={e => setNftData({ ...nftData, price: e.target.value })} />
@@ -857,88 +858,89 @@ return (
               onChange={e => setSelectedFile(e.target.files)}
             />
           </div>
-              {/* =========================
+          {/* =========================
    CHỌN COLLECTION CŨ
 ========================= */}
 
-<select
-  value={currentCollectionAddress}
-  onChange={(e) => {
+          <select
+            value={currentCollectionAddress}
+            onChange={(e) => {
 
-    const value = e.target.value;
+              const value = e.target.value;
 
-    // USER MUỐN TẠO MỚI
-    if (value === "__new__") {
+              // USER MUỐN TẠO MỚI
+              if (value === "__new__") {
 
-      setCurrentCollectionAddress("");
-      setCollectionName("");
-      setCollectionSymbol("");
+                setCurrentCollectionAddress("");
+                setCollectionName("");
+                setCollectionSymbol("");
 
-      return;
-    }
+                return;
+              }
 
-    const selected = collections.find(
-      c => c.contract_address === value
-    );
+              const selected = collections.find(
+                c => c.contract_address === value
+              );
 
-    if (selected) {
+              if (selected) {
 
-      setCurrentCollectionAddress(
-        selected.contract_address
-      );
+                setCurrentCollectionAddress(
+                  selected.contract_address
+                );
 
-      setCollectionName(
-        selected.collection_name
-      );
-    }
+                setCollectionName(
+                  selected.collection_name
+                );
+              }
 
-  }}
-  style={{
-    width: '100%',
-    padding: '14px',
-    borderRadius: '12px',
-    background: '#111',
-    color: '#fff',
-    border: '1px solid #00ffff',
-    marginBottom: '15px'
-  }}
->
-  <option value="">
-    -- CHỌN COLLECTION CŨ --
-  </option>
+            }}
+            style={{
+              width: '100%',
+              padding: '14px',
+              borderRadius: '12px',
+              background: '#111',
+              color: '#fff',
+              border: '1px solid #00ffff',
+              marginBottom: '15px'
+            }}
+          >
+            <option value="">
+              -- CHỌN COLLECTION CŨ --
+            </option>
 
-  {collections.map((col) => (
+            {collections.map((col) => (
 
-    <option
-      key={col.id}
-      value={col.contract_address}
-    >
-      {col.collection_name}
-    </option>
+              <option
+                key={col.id}
+                value={col.contract_address}
+              >
+                {col.collection_name}
+              </option>
 
-  ))}
+            ))}
 
-  <option value="__new__">
-    ➕ TẠO COLLECTION MỚI
-  </option>
+            <option value="__new__">
+              ➕ TẠO COLLECTION MỚI
+            </option>
 
-</select>
+          </select>
 
-{/* =========================
+          {/* =========================
    FORM TẠO COLLECTION MỚI
 ========================= */}
 
-{!currentCollectionAddress && (
+          {!currentCollectionAddress && (
 
-  <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }} >
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }} >
 
-    <input placeholder="Tên Collection mới" value={collectionName} onChange={(e) => setCollectionName(e.target.value) } style={{ flex: 1, padding: '12px', borderRadius: '10px', background: '#111', color: 'white', border: '1px solid #00ffff' }} />
-    <input placeholder="Ký hiệu" value={collectionSymbol} onChange={(e) => setCollectionSymbol(e.target.value) } style={{ width: '120px', padding: '12px', borderRadius: '10px', background: '#111', color: 'white', border: '1px solid #00ffff' }} />
-  </div>
-)}
-          <button onClick={deployAndMint} disabled={isLoading} style={{padding: '15px 30px', borderRadius: '12px', fontWeight: 'bold', cursor: isLoading ? 'not-allowed' : 'pointer', background: isLoading ? '#334155' : '#00ffff', // Đổi màu khi bị khóa color: isLoading ? '#94a3b8' : '#000', opacity: isLoading ? 0.7 : 1, transition: '0.3s'
+              <input placeholder="Tên Collection mới" value={collectionName} onChange={(e) => setCollectionName(e.target.value)} style={{ flex: 1, padding: '12px', borderRadius: '10px', background: '#111', color: 'white', border: '1px solid #00ffff' }} />
+              <input placeholder="Ký hiệu" value={collectionSymbol} onChange={(e) => setCollectionSymbol(e.target.value)} style={{ width: '120px', padding: '12px', borderRadius: '10px', background: '#111', color: 'white', border: '1px solid #00ffff' }} />
+            </div>
+          )}
+          <button onClick={deployAndMint} disabled={isLoading} style={{
+            padding: '15px 30px', borderRadius: '12px', fontWeight: 'bold', cursor: isLoading ? 'not-allowed' : 'pointer', background: isLoading ? '#334155' : '#00ffff', // Đổi màu khi bị khóa color: isLoading ? '#94a3b8' : '#000', opacity: isLoading ? 0.7 : 1, transition: '0.3s'
           }}>
-    {isLoading ? "ĐANG XỬ LÝ..." : "PHÁT HÀNH NGAY"}
+            {isLoading ? "ĐANG XỬ LÝ..." : "PHÁT HÀNH NGAY"}
           </button>
 
           <p style={styles.statusText}>{status}</p>
@@ -952,7 +954,7 @@ return (
             <h2 style={styles.cardTitle}>🚀 Đăng tác phẩm lên Sàn</h2>
             <p style={styles.authInfo}>Đang đăng bài với tư cách: <b>{authEmail}</b></p>
 
-            <input style={styles.input} placeholder="Tên NFT / Tên bản nhạc" value={nftData.name} onChange={(e) => setNftData({ ...nftData, name: e.target.value }) } />
+            <input style={styles.input} placeholder="Tên NFT / Tên bản nhạc" value={nftData.name} onChange={(e) => setNftData({ ...nftData, name: e.target.value })} />
             <input type="number" style={styles.input} placeholder="Giá niêm yết (ETH)" onChange={e => setNftData({ ...nftData, price: e.target.value })} />
 
             <div style={styles.uploadBox}>
@@ -977,23 +979,23 @@ return (
       <div style={styles.grid}>
         {nfts.map((nft) => (
           <div key={nft.id} style={styles.nftCard} className="nft-card-hover">
-            <div className="music-card"    data-audio={nft.image_url} onMouseEnter={(e) => playPreview(e.currentTarget)} onMouseLeave={(e) => stopPreview(e.currentTarget)}>
-            <div style={styles.imageWrapper}>
-              <img src={nft.image_url} style={styles.nftImage} onClick={() => { setCurrentTrack(nft); }} />
-              <div style={styles.playOverlay} onClick={() => setCurrentTrack(nft)}>▶</div>
-            </div>
-            <div style={styles.nftContent}>
-              <h4 style={{ marginBottom: '5px' }}>{nft.collection_name}</h4>
-              <p style={{ fontSize: '12px', color: '#666' }}>Nghệ sĩ: {nft.creator_email || 'Hùng Louis'}</p>
-              <div style={styles.cardFooter}>
-                <span style={{ color: '#6366f1', fontWeight: 'bold' }}>{nft.price} ETH</span>
-                {nft.is_for_sale ? (
-                  <button style={styles.btnBuy} onClick={() => handleVietQR(nft)}>🏦 Mua VNĐ</button>
-                ) : (
-                  <button style={styles.btnOffer}>🤝 Đề nghị</button>
-                )}
+            <div className="music-card" data-audio={nft.image_url} onMouseEnter={(e) => playPreview(e.currentTarget)} onMouseLeave={(e) => stopPreview(e.currentTarget)}>
+              <div style={styles.imageWrapper}>
+                <img src={nft.image_url} style={styles.nftImage} onClick={() => { setCurrentTrack(nft); }} />
+                <div style={styles.playOverlay} onClick={() => setCurrentTrack(nft)}>▶</div>
               </div>
-            </div>
+              <div style={styles.nftContent}>
+                <h4 style={{ marginBottom: '5px' }}>{nft.collection_name}</h4>
+                <p style={{ fontSize: '12px', color: '#666' }}>Nghệ sĩ: {nft.creator_email || 'Hùng Louis'}</p>
+                <div style={styles.cardFooter}>
+                  <span style={{ color: '#6366f1', fontWeight: 'bold' }}>{nft.price} ETH</span>
+                  {nft.is_listed ? (
+                    <button style={styles.btnBuy} onClick={() => handleVietQR(nft)}>🏦 Mua VNĐ</button>
+                  ) : (
+                    <button style={styles.btnOffer}>🤝 Đề nghị</button>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         ))}
