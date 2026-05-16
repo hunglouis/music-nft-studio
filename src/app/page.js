@@ -95,34 +95,24 @@ export default function MusicNFTStudio() {
     }
   }
   const fetchMyCollections = async () => {
+    try {
+      const { data } = await supabase
+        .from("collections")
+        .select("*")
+        .eq("creator_address", walletAddress);
 
-    const { data } = await supabase
-      .from("collections")
-      .select("*")
-      .eq("creator_address", walletAddress);
-
-    setMyCollections(data || []);
-  };
-  const fetchCollections = async () => {
-
-    const { data, error } = await supabase
-      .from("collections")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (error) {
+      setMyCollections(data || []);
+    }
+    catch (error) {
       console.log(error);
       return;
     }
-
-    setCollections(data || []);
-  };
+  }
 
 
   useEffect(() => {
     fetchNFTs();
     fetchTransactions();
-    fetchCollections();
     handleVisitorCount();
   }, []);
 
@@ -135,6 +125,23 @@ export default function MusicNFTStudio() {
   useEffect(() => {
     if (authEmail) fetchMyCollection();
   }, [authEmail]);
+
+  // 1. Hàm lấy dữ liệu từ Supabase khi component được tải lên
+  useEffect(() => {
+    const fetchCollections = async () => {
+      const { data, error } = await supabase
+        .from('collections') // Tên bảng trên Supabase của bạn
+        .select('id, contract_address, collection_name'); // Các cột cần lấy
+
+      if (error) {
+        console.error("Lỗi lấy dữ liệu Supabase:", error.message);
+      } else {
+        setCollections(data || []);
+      }
+    };
+
+    fetchCollections();
+  }, []);
 
   const fetchNFTs = async () => {
     const { data } = await supabase.from('items').select('*').order('created_at', { ascending: false });
@@ -157,6 +164,29 @@ export default function MusicNFTStudio() {
       const newCount = data.views + 1;
       setTotalVisits(newCount);
       await supabase.from('site_stats').update({ views: newCount }).eq('id', 1);
+    }
+  };
+
+  // 2. Hàm xử lý khi người dùng chọn một mục trong danh sách
+  const handleSelectChange = (e) => {
+    const value = e.target.value;
+
+    // Tìm collection tương ứng dựa trên contract_address
+    const selected = collections.find(c => c.contract_address === value);
+
+    if (selected) {
+      // Trường hợp chọn một collection hợp lệ có sẵn
+      setCurrentCollectionAddress(selected.contract_address);
+      setCollectionName(selected.collection_name);
+    } else if (value === "__new__") {
+      // Trường hợp người dùng bấm "TẠO COLLECTION MỚI"
+      setCurrentCollectionAddress("__new__");
+      setCollectionName("");
+      // Bạn có thể kích hoạt mở Modal hoặc chuyển hướng trang ở đây nếu cần
+    } else {
+      // Trường hợp bấm quay lại dòng mặc định "-- CHỌN COLLECTION CŨ --"
+      setCurrentCollectionAddress("");
+      setCollectionName("");
     }
   };
 
@@ -269,7 +299,7 @@ export default function MusicNFTStudio() {
         uploadRes.data.IpfsHash;
 
       const image_url =
-        `https://gateway.pinata.cloud/ipfs/${itemCID}`;
+        `https://gateway.pinata.cloud/ipfs/` + itemCID;
 
       console.log(
         "🎵 IMAGE URL =",
@@ -325,7 +355,7 @@ export default function MusicNFTStudio() {
         metadataRes.data.IpfsHash;
 
       const metadataURL =
-        `https://gateway.pinata.cloud/ipfs/${metadataCID}`;
+        `https://gateway.pinata.cloud/ipfs/` + metadataCID;
 
       console.log(
         "🧠 METADATA URL =",
@@ -615,9 +645,7 @@ export default function MusicNFTStudio() {
         "💾 Đang lưu NFT..."
       );
 
-      const {
-        error: itemError
-      } = await supabase
+      const { error: itemError } = await supabase
         .from("items")
         .insert([
           {
@@ -661,9 +689,8 @@ export default function MusicNFTStudio() {
           itemError
         );
 
-        throw itemError;
       }
-
+      throw itemError;
       // =====================================================
       // DONE
       // =====================================================
@@ -676,47 +703,25 @@ export default function MusicNFTStudio() {
         "🎉 NFT ĐÃ MINT THÀNH CÔNG"
       );
 
-      alert(`
-🎉 NFT ĐÃ MINT THÀNH CÔNG
-
-COLLECTION:
-${collectionName}
-
-NFT:
-${nftData.name}
-
-CONTRACT:
-${collectionAddress}
-
-TOKEN ID:
-${tokenId}
-`);
-
+      alert(`🎉   NFT ĐÃ MINT THÀNH CÔNG    COLLECTION:    ${collectionName}    NFT:    ${nftData.name}    CONTRACT:    ${collectionAddress}    TOKEN ID:    ${tokenId}                `);
       fetchNFTs();
-
       fetchMyCollection();
-
       fetchCollections();
-
     } catch (err) {
-
       console.error(err);
 
       alert(
-        err.reason ||
-        err.message ||
         "Mint NFT thất bại"
       );
-
       setStatus(
         "❌ Có lỗi xảy ra"
       );
 
     } finally {
-
       setLoading(false);
     }
   };
+
   // =================================================================
   // ĐOẠN LOGIC 45 GIÂY: ĐẶT NGAY PHÍA TRÊN LỆNH RETURN GIAO DIỆN CỦA BẠN
   // =================================================================
@@ -859,75 +864,38 @@ ${tokenId}
             />
           </div>
           {/* =========================
-   CHỌN COLLECTION CŨ
-========================= */}
+              CHỌN COLLECTION CŨ
+            ========================= */}
 
-          <select
-            value={currentCollectionAddress}
-            onChange={(e) => {
+          <div style={{ padding: '20px' }}>
+            <label htmlFor="collection-select" style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+              Chọn Bộ Sưu Tập:
+            </label>
 
-              const value = e.target.value;
+            <select
+              id="collection-select"
+              value={currentCollectionAddress}
+              onChange={handleSelectChange}
+              style={{ width: '100%', padding: '14px', borderRadius: '4px', border: '1px solid #ccc' }}
+            >
+              <option value="">-- CHỌN COLLECTION CŨ --</option>
 
-              // USER MUỐN TẠO MỚI
-              if (value === "__new__") {
+              {/* Vòng lặp hiển thị danh sách lấy từ Supabase */}
+              {collections.map((col) => (
+                <option key={col.id} value={col.contract_address}>
+                  {col.collection_name}
+                </option>
+              ))}
 
-                setCurrentCollectionAddress("");
-                setCollectionName("");
-                setCollectionSymbol("");
+              <option value="__new__">➕ TẠO COLLECTION MỚI</option>
+            </select>
+          </div>
 
-                return;
-              }
 
-              const selected = collections.find(
-                c => c.contract_address === value
-              );
-
-              if (selected) {
-
-                setCurrentCollectionAddress(
-                  selected.contract_address
-                );
-
-                setCollectionName(
-                  selected.collection_name
-                );
-              }
-
-            }}
-            style={{
-              width: '100%',
-              padding: '14px',
-              borderRadius: '12px',
-              background: '#111',
-              color: '#fff',
-              border: '1px solid #00ffff',
-              marginBottom: '15px'
-            }}
-          >
-            <option value="">
-              -- CHỌN COLLECTION CŨ --
-            </option>
-
-            {collections.map((col) => (
-
-              <option
-                key={col.id}
-                value={col.contract_address}
-              >
-                {col.collection_name}
-              </option>
-
-            ))}
-
-            <option value="__new__">
-              ➕ TẠO COLLECTION MỚI
-            </option>
-
-          </select>
 
           {/* =========================
-   FORM TẠO COLLECTION MỚI
-========================= */}
+                FORM TẠO COLLECTION MỚI
+                ========================= */}
 
           {!currentCollectionAddress && (
 
