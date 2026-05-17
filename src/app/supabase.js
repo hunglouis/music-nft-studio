@@ -7,5 +7,5 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.error("⚠️ Cảnh báo: Thiếu biến môi trường Supabase! Kiểm tra lại file .env.local");
 }
 
-export const supabase = createClient(supabaseUrl || 'https://supabase.co',supabaseAnonKey || 'placeholder')
+export const supabase = createClient(supabaseUrl || 'https://hmvvjjiiaelcsfqgxbxv.supabase.co',supabaseAnonKey || 'placeholder')
 )
