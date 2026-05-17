@@ -880,12 +880,17 @@ export default function MusicNFTStudio() {
             >
               <option value="">-- CHỌN COLLECTION CŨ --</option>
 
-              {/* Vòng lặp hiển thị danh sách lấy từ Supabase */}
-              {collections.map((col) => (
-                <option key={col.id} value={col.contract_address}>
-                  {col.collection_name}
-                </option>
-              ))}
+              {/* Sử dụng dấu hỏi chấm collections? để kiểm tra mảng an toàn */}
+              {collections?.length > 0 ? (
+                collections.map((col) => (
+                  <option key={col.id} value={col.contract_address}>
+                    {col.collection_name}
+                  </option>
+                ))
+              ) : (
+                <option disabled value="">(Đang tải dữ liệu hoặc chưa có bộ sưu tập...)</option>
+              )}
+
 
               <option value="__new__">➕ TẠO COLLECTION MỚI</option>
             </select>
