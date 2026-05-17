@@ -7,16 +7,13 @@ import { supabase } from "../lib/supabase";
 import { MUSIC_NFT_ABI } from "../lib/MusicNFTAbi";
 
 // ⚠️ THAY BẰNG MARKETPLACE ABI THẬT
-const MARKETPLACE_ABI = [
-  "function listItem(address nftContract,uint256 tokenId,uint256 price) external",
-  "function buyItem(address nftContract,uint256 tokenId) external payable"
-];
+const MARKETPLACE_ABI = [   {     "inputs": [],     "name": "ReentrancyGuardReentrantCall",     "type": "error"   },   {     "anonymous": false,     "inputs": [       {         "indexed": false,         "internalType": "address",         "name": "nft",         "type": "address"       },       {         "indexed": false,         "internalType": "uint256",         "name": "tokenId",         "type": "uint256"       }     ],     "name": "Cancelled",     "type": "event"   },   {     "anonymous": false,     "inputs": [       {         "indexed": false,         "internalType": "address",         "name": "nft",         "type": "address"       },       {         "indexed": false,         "internalType": "uint256",         "name": "tokenId",         "type": "uint256"       },       {         "indexed": false,         "internalType": "uint256",         "name": "price",         "type": "uint256"       },       {         "indexed": false,         "internalType": "address",         "name": "seller",         "type": "address"       }     ],     "name": "Listed",     "type": "event"   },   {     "anonymous": false,     "inputs": [       {         "indexed": false,         "internalType": "address",         "name": "nft",         "type": "address"       },       {         "indexed": false,         "internalType": "uint256",         "name": "tokenId",         "type": "uint256"       },       {         "indexed": false,         "internalType": "address",         "name": "buyer",         "type": "address"       },       {         "indexed": false,         "internalType": "uint256",         "name": "price",         "type": "uint256"       }     ],     "name": "Sold",     "type": "event"   },   {     "inputs": [       {         "internalType": "address",         "name": "nftContract",         "type": "address"       },       {         "internalType": "uint256",         "name": "tokenId",         "type": "uint256"       }     ],     "name": "buyItem",     "outputs": [],     "stateMutability": "payable",     "type": "function"   },   {     "inputs": [       {         "internalType": "address",         "name": "nftContract",         "type": "address"       },       {         "internalType": "uint256",         "name": "tokenId",         "type": "uint256"       }     ],     "name": "cancelListing",     "outputs": [],     "stateMutability": "nonpayable",     "type": "function"   },   {     "inputs": [       {         "internalType": "address",         "name": "nftContract",         "type": "address"       },       {         "internalType": "uint256",         "name": "tokenId",         "type": "uint256"       },       {         "internalType": "uint256",         "name": "price",         "type": "uint256"       }     ],     "name": "listItem",     "outputs": [],     "stateMutability": "nonpayable",     "type": "function"   },   {     "inputs": [       {         "internalType": "address",         "name": "",         "type": "address"       },       {         "internalType": "uint256",         "name": "",         "type": "uint256"       }     ],     "name": "listings",     "outputs": [       {         "internalType": "address",         "name": "seller",         "type": "address"       },       {         "internalType": "uint256",         "name": "price",         "type": "uint256"       },       {         "internalType": "bool",         "name": "active",         "type": "bool"       }     ],     "stateMutability": "view",     "type": "function"   } ];
 
 // ⚠️ THAY BẰNG MARKETPLACE ADDRESS THẬT
 	const MARKETPLACE_ADDRESS =
-  "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
+  "0x624dce1e5da13ad6f45e897280d1a3f8b36b4af3";
   const MUSIC_NFT_ADDRESS =
-  "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+  "0xd5Cae8a1a2Ed9D49569f5C0C2E51FAA7Df86cd89";
 
 export default function MintIntoCollection() {
 
@@ -284,7 +281,7 @@ export default function MintIntoCollection() {
 
           audio_url: audioUrl,
 
-          music_url: audioUrl,
+          music_url: imageUrl,
 
           metadata_url: metadataURI,
 
@@ -294,7 +291,7 @@ export default function MintIntoCollection() {
 
           price: price,
 
-          is_for_sale: true,
+          is_listed: true,
 
           source: "internal",
 
