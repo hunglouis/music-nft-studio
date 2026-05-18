@@ -117,10 +117,11 @@ export default function MusicNFTStudio() {
       const { data, error } = await supabase
         .from("items") // Tên bảng items của bạn
         .select("*")
-        .eq("is_hidden", false); // 🌟 BỔ SUNG: Chặn hoàn toàn không cho các item ẩn lọt ra trang chủ
+        .eq("is_hidden", false) // 🌟 BỔ SUNG: Chặn hoàn toàn không cho các item ẩn lọt ra trang chủ
+        .order('created_at', { ascending: false });
 
       if (!error && data) {
-        setNfts(data); // Hoặc tên State lưu danh sách NFT của bạn (ví dụ: setItems)
+        setNfts(data || []); // Hoặc tên State lưu danh sách NFT của bạn (ví dụ: setItems)
       }
     } catch (err) {
       console.log("Lỗi fetchNFTs:", err);
@@ -163,19 +164,8 @@ export default function MusicNFTStudio() {
   }, []);
 
 
-  const fetchNFTs = async () => {
-    // 🌟 BỔ SUNG: .eq('is_hidden', false) để ẩn item khỏi trang chủ/danh sách tổng
-    const { data } = await supabase
-      .from('items')
-      .select('*')
-      .eq('is_hidden', false)
-      .order('created_at', { ascending: false });
-
-    setNfts(data || []);
-  };
-
   const fetchTransactions = async () => {
-    const { data } = await supabase.from('transactions').select('*').order('created_at', { ascending: false }).limit(100);
+    const { data } = await supabase.from('transactions').select('*').eq('is_hidden', false).order('created_at', { ascending: false }).limit(100);
     setTransactions(data || []);
   };
 
@@ -713,6 +703,9 @@ export default function MusicNFTStudio() {
 
             is_listed:
               true,
+
+            is_hidden:
+              false,
           },
         ]);
 
