@@ -94,18 +94,36 @@ export default function MusicNFTStudio() {
       console.error("Lỗi khi gọi API:", error);
     }
   }
+
   const fetchMyCollections = async () => {
     try {
       const { data } = await supabase
         .from("collections")
         .select("*")
-        .eq("creator_address", walletAddress);
+        .eq("creator_address", walletAddress)
+        .eq("is_hidden", false); // 🌟 BỔ SUNG: Ẩn các collection cũ của riêng ví này nếu bị đánh dấu ẩn
 
       setMyCollections(data || []);
     }
     catch (error) {
       console.log(error);
       return;
+    }
+  }
+
+  // Bổ sung thêm hàm fetchNFTs nếu file của bạn đang lấy danh sách NFT/Items ra trang chủ
+  const fetchNFTs = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("items") // Tên bảng items của bạn
+        .select("*")
+        .eq("is_hidden", false); // 🌟 BỔ SUNG: Chặn hoàn toàn không cho các item ẩn lọt ra trang chủ
+
+      if (!error && data) {
+        setNfts(data); // Hoặc tên State lưu danh sách NFT của bạn (ví dụ: setItems)
+      }
+    } catch (err) {
+      console.log("Lỗi fetchNFTs:", err);
     }
   }
 
@@ -126,12 +144,13 @@ export default function MusicNFTStudio() {
     if (authEmail) fetchMyCollection();
   }, [authEmail]);
 
-  // 1. Hàm lấy dữ liệu từ Supabase khi component được tải lên
+  // 1. Hàm lấy dữ liệu đổ vào Hộp thoại combo (Select Box)
   useEffect(() => {
     const fetchCollections = async () => {
       const { data, error } = await supabase
-        .from('collections') // Tên bảng trên Supabase của bạn
-        .select('id, contract_address, collection_name'); // Các cột cần lấy
+        .from('collections')
+        .select('id, contract_address, collection_name')
+        .eq("is_hidden", false); // 🌟 BỔ SUNG: Ẩn các bộ sưu tập bị đánh dấu ẩn khỏi hộp thoại combo dropdown
 
       if (error) {
         console.error("Lỗi lấy dữ liệu Supabase:", error.message);
@@ -143,8 +162,15 @@ export default function MusicNFTStudio() {
     fetchCollections();
   }, []);
 
+
   const fetchNFTs = async () => {
-    const { data } = await supabase.from('items').select('*').order('created_at', { ascending: false });
+    // 🌟 BỔ SUNG: .eq('is_hidden', false) để ẩn item khỏi trang chủ/danh sách tổng
+    const { data } = await supabase
+      .from('items')
+      .select('*')
+      .eq('is_hidden', false)
+      .order('created_at', { ascending: false });
+
     setNfts(data || []);
   };
 
@@ -154,7 +180,14 @@ export default function MusicNFTStudio() {
   };
 
   const fetchMyCollection = async () => {
-    const { data } = await supabase.from('items').select('*').eq('creator_address', authEmail).order('created_at', { ascending: false });
+    // 🌟 BỔ SUNG: .eq('is_hidden', false) để ẩn item khỏi trang hồ sơ/bộ sưu tập riêng cá nhân
+    const { data } = await supabase
+      .from('items')
+      .select('*')
+      .eq('creator_address', authEmail)
+      .eq('is_hidden', false)
+      .order('created_at', { ascending: false });
+
     setMyCollection(data || []);
   };
 
@@ -166,6 +199,7 @@ export default function MusicNFTStudio() {
       await supabase.from('site_stats').update({ views: newCount }).eq('id', 1);
     }
   };
+
 
   // 2. Hàm xử lý khi người dùng chọn một mục trong danh sách
   const handleSelectChange = (e) => {
@@ -874,26 +908,26 @@ export default function MusicNFTStudio() {
 
             <select
               id="collection-select"
-              value={currentCollectionAddress}
+              value={currentCollectionAddress || ""}
               onChange={handleSelectChange}
-              style={{ width: '100%', padding: '14px', borderRadius: '4px', border: '1px solid #ccc' }}
+              style={{ width: '100%', padding: '14px', borderRadius: '4px', border: '1px solid #ccc', color: '#000' }}
             >
               <option value="">-- CHỌN COLLECTION CŨ --</option>
 
-              {/* Sử dụng dấu hỏi chấm collections? để kiểm tra mảng an toàn */}
-              {collections?.length > 0 ? (
-                collections.map((col) => (
-                  <option key={col.id} value={col.contract_address}>
-                    {col.collection_name}
-                  </option>
-                ))
-              ) : (
-                <option disabled value="">(Đang tải dữ liệu hoặc chưa có bộ sưu tập...)</option>
-              )}
-
+              {/* Tạo bộ lọc Unique loại bỏ các hàng trùng lặp dựa trên contract_address */}
+              {collections && Array.from(new Map(
+                collections
+                  .filter(col => col.contract_address && col.collection_name) // Loại bỏ các dòng bị rỗng dữ liệu
+                  .map(col => [col.contract_address.toLowerCase().trim(), col]) // Đồng bộ chữ hoa/thường để lọc chính xác
+              ).values()).map((col) => (
+                <option key={col.id} value={col.contract_address}>
+                  {col.collection_name}
+                </option>
+              ))}
 
               <option value="__new__">➕ TẠO COLLECTION MỚI</option>
             </select>
+
           </div>
 
 

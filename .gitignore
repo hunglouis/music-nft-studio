@@ -30,7 +30,8 @@ ABI.json
 node_modules/
 artifacts/
 cache/
-.env
 .next
+.env
+
 
 
