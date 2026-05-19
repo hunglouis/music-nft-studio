@@ -217,7 +217,7 @@ export default function MusicNFTStudio() {
   // --- THANH TOÁN VIETQR BIDV ---
   const handleVietQR = (nft) => {
     // 1. TẠO LINK QR BIDV CHUẨN (KHÔNG LỖI ẢNH)
-    const amount = Math.round(parseFloat(nft.price || 0) * 25500);
+    const amount = Math.round(parseFloat(nft.price || 0) * 25500 * 2267);
     const description = encodeURIComponent(`MUA NFT ${nft.name.toUpperCase()}`);
 
     // Link ảnh QR BIDV chính xác cho số TK 3120464627
