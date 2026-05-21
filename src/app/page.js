@@ -239,9 +239,9 @@ export default function MusicNFTStudio() {
       'template_fk98mhc',
       templateParams,
       'kQ7_6eXaohS_msZ-P'
-    ).then(() => {
-      console.log("📧 Đã gửi thư báo đơn hàng mới!");
-    }).catch((err) => {
+    ).then(function (response) {
+      console.log("📧 Đã gửi thư báo đơn hàng mới!", response);
+    }).catch(function (err) {
       console.error("Lỗi gửi email:", err);
     });
   };
