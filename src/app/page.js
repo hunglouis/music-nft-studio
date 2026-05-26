@@ -751,7 +751,7 @@ export default function MusicNFTStudio() {
     }
   };
   // ĐOẠN CODE TRONG ỨNG DỤNG MINT CŨ CỦA BẠN (Ví dụ sau khi lấy được link file gốc thành công)
-  const fullIpfsUrl = "https://pinata.cloud..."; // Link file gốc ứng dụng cũ vừa tự up xong
+  const image_url = "https://pinata.cloud..."; // Link file gốc ứng dụng cũ vừa tự up xong
 
   // Bắn thông báo kích hoạt server cổng 3002 chạy ngầm cắt nhạc phía sau
   fetch('http://localhost:3002/api/process-preview-bg', {
@@ -760,7 +760,7 @@ export default function MusicNFTStudio() {
     body: JSON.stringify({
       contract_Address: collectionAddress,
       token_id: tokenId,
-      fullIpfsUrl: fullIpfsUrl // Gửi cái link 5 giây sang đây
+      image_url: image_url // Gửi cái link 5 giây sang đây
     })
   });
 
