@@ -28,6 +28,8 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function MusicNFTStudio() {
   // --- HỆ THỐNG BIẾN TRẠNG THÁI (STATES) ---
+  const [tokenId, setTokenId] = useState(null);
+  const [collectionAddress, setCollectionAddress] = useState("");
   const [collections, setCollections] = useState([]);
   const [walletAddress, setWalletAddress] = useState("");
   const [myCollections, setMyCollections] = useState([]);
@@ -748,6 +750,21 @@ export default function MusicNFTStudio() {
       setLoading(false);
     }
   };
+  // ĐOẠN CODE TRONG ỨNG DỤNG MINT CŨ CỦA BẠN (Ví dụ sau khi lấy được link file gốc thành công)
+  const fullIpfsUrl = "https://pinata.cloud..."; // Link file gốc ứng dụng cũ vừa tự up xong
+
+  // Bắn thông báo kích hoạt server cổng 3002 chạy ngầm cắt nhạc phía sau
+  fetch('http://localhost:3002/api/process-preview-bg', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contract_Address: collectionAddress,
+      token_id: tokenId,
+      fullIpfsUrl: fullIpfsUrl // Gửi cái link 5 giây sang đây
+    })
+  });
+
+  // Tiếp tục các câu lệnh chuyển tiếp giao diện cũ của bạn bình thường...
 
   // =================================================================
   // ĐOẠN LOGIC 45 GIÂY: ĐẶT NGAY PHÍA TRÊN LỆNH RETURN GIAO DIỆN CỦA BẠN
