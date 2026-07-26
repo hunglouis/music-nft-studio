@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import axios from 'axios';
 import { ethers } from "ethers";
+import emailjs from '@emailjs/browser';
+
 
 const ALCHEMY_API_KEY = process.env.NEXT_PUBLIC_ALCHEMY_KEY;
 const RPC_URL = `https://eth-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}`;
@@ -237,7 +239,7 @@ export default function MusicNFTStudio() {
     };
 
     emailjs.send(
-      'service_1dhjp6a',
+      'service_08wqhr4',
       'template_fk98mhc',
       templateParams,
       'kQ7_6eXaohS_msZ-P'
@@ -324,12 +326,12 @@ export default function MusicNFTStudio() {
       const itemCID =
         uploadRes.data.IpfsHash;
 
-      const image_url =
+      const fullAudioUrl =
         `https://gateway.pinata.cloud/ipfs/` + itemCID;
 
       console.log(
-        "🎵 IMAGE URL =",
-        image_url
+        "🎵 FULL AUDIO URL =",
+        fullAudioUrl
       );
 
       // =====================================================
@@ -682,8 +684,8 @@ export default function MusicNFTStudio() {
             description:
               nftData.desc || "",
 
-            image_url:
-              image_url,
+            fullAudioURL:
+              fullAudioUrl,
 
             metadata_url:
               metadataURL,
@@ -751,18 +753,42 @@ export default function MusicNFTStudio() {
     }
   };
   // ĐOẠN CODE TRONG ỨNG DỤNG MINT CŨ CỦA BẠN (Ví dụ sau khi lấy được link file gốc thành công)
-  const image_url = "https://pinata.cloud..."; // Link file gốc ứng dụng cũ vừa tự up xong
+  const fullAudioUrl = "https://pinata.cloud..."; // Link file gốc ứng dụng cũ vừa tự up xong
 
-  // Bắn thông báo kích hoạt server cổng 3002 chạy ngầm cắt nhạc phía sau
-  fetch('http://localhost:3002/api/process-preview-bg', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contract_Address: collectionAddress,
-      token_id: tokenId,
-      image_url: image_url // Gửi cái link 5 giây sang đây
-    })
-  });
+  // ==========================================
+  // ĐOẠN MÃ PHÁT LỆNH SANG SERVER NGẦM (RENDER)
+  // Chèn ngay sau khi lưu database thành công!
+  try {
+    // Đổi insertedData thành tokenId lấy trực tiếp từ hàm mint thành công phía trên
+    const newTrackId = tokenId;
+
+    if (newTrackId) {
+      console.log(`🚀 [Phát Lệnh] Đang báo động sang Server ngầm cắt nhạc cấp tốc cho ID: [${newTrackId}]`);
+
+      // 2. Đường dẫn Server ngầm trên Render của bạn
+      const RENDER_BACKEND_URL = "https://crypto-api-backend-2url.onrender.com";
+
+      // 3. Sử dụng fetch (hoặc axios) để bắn API sang cổng đón nhận của Server ngầm
+      fetch(`${RENDER_BACKEND_URL}/api/trigger-cut`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ trackId: newTrackId }),
+      })
+        .then((response) => response.json())
+        .then((resData) => {
+          console.log("⚡ [Phản Hồi] Server ngầm báo đã nhận lệnh thành công:", resData.message);
+        })
+        .catch((err) => {
+          console.warn("⚠️ Không thể gọi trực tiếp Server ngầm (Có thể Render đang ngủ), hệ thống sẽ chờ Cronjob quét định kỳ:", err.message);
+        });
+    }
+  } catch (globalTriggerError) {
+    console.error("❌ Lỗi luồng phát lệnh Webhook:", globalTriggerError.message);
+  }
+  // ==========================================
+
 
   // Tiếp tục các câu lệnh chuyển tiếp giao diện cũ của bạn bình thường...
 
@@ -774,7 +800,7 @@ export default function MusicNFTStudio() {
   let previewTimeout = null;
 
   function playPreview(cardElement) {
-    // Lấy link tệp từ thuộc tính data-audio (Sử dụng đúng cột image_url của bạn)
+    // Lấy link tệp từ thuộc tính data-audio (Sử dụng đúng cột fullAudioURL của bạn)
     const mediaUrl = cardElement.getAttribute('data-audio') || cardElement.getAttribute('data-image');
     if (!mediaUrl) return;
 
@@ -996,9 +1022,9 @@ export default function MusicNFTStudio() {
       <div style={styles.grid}>
         {nfts.map((nft) => (
           <div key={nft.id} style={styles.nftCard} className="nft-card-hover">
-            <div className="music-card" data-audio={nft.image_url} onMouseEnter={(e) => playPreview(e.currentTarget)} onMouseLeave={(e) => stopPreview(e.currentTarget)}>
+            <div className="music-card" data-audio={nft.fullAudioUrl} onMouseEnter={(e) => playPreview(e.currentTarget)} onMouseLeave={(e) => stopPreview(e.currentTarget)}>
               <div style={styles.imageWrapper}>
-                <img src={nft.image_url} style={styles.nftImage} onClick={() => { setCurrentTrack(nft); }} />
+                <img src={nft.previewUrl} style={styles.nftImage} onClick={() => { setCurrentTrack(nft); }} />
                 <div style={styles.playOverlay} onClick={() => setCurrentTrack(nft)}>▶</div>
               </div>
               <div style={styles.nftContent}>
@@ -1038,7 +1064,7 @@ export default function MusicNFTStudio() {
           <div style={styles.gridSmall}>
             {myCollection.map(item => (
               <div key={item.id} style={styles.nftCardSmall}>
-                <img src={item.image_url} style={{ width: '100%', height: '120px', objectFit: 'cover' }} />
+                <img src={item.previewUrl} style={{ width: '100%', height: '120px', objectFit: 'cover' }} />
                 <p style={{ padding: '10px', fontSize: '12px', color: '#fff' }}>{item.name}</p>
               </div>
             ))}
@@ -1091,10 +1117,10 @@ export default function MusicNFTStudio() {
       {currentTrack && (
         <div style={styles.fixedPlayer}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <img src={currentTrack.image_url} style={{ width: '50px', height: '50px', borderRadius: '10px' }} />
+            <img src={currentTrack.fullAudioUrl} style={{ width: '50px', height: '50px', borderRadius: '10px' }} />
             <div><b style={{ fontSize: '14px' }}>{currentTrack.name}</b></div>
           </div>
-          <video src={currentTrack.image_url} autoPlay controls style={{ height: '45px', borderRadius: '10px' }} />
+          <video src={currentTrack.fullAudioUrl} autoPlay controls style={{ height: '45px', borderRadius: '10px' }} />
           <button onClick={() => setCurrentTrack(null)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '20px' }}>✕</button>
         </div>
       )}

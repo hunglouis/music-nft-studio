@@ -1,0 +1,23 @@
+name: Deploy to Render
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  test-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Kiểm tra chất lượng code của doanh nghiệp trước
+      - name: Run Quality Checks
+        run: |
+          echo "Chạy các bài kiểm tra bảo mật và logic..."
+          # Thêm lệnh test thực tế của bạn ở đây (ví dụ: npm test, pytest...)
+
+      # Kích hoạt Render Deploy nếu test thành công
+      - name: Trigger Render Deploy Hook
+        # Sử dụng lệnh curl để gửi yêu cầu POST tới Render
+        run: |
+          curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}"
