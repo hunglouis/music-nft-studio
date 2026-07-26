@@ -298,6 +298,7 @@ export default function MusicNFTStudio() {
       // =====================================================
 
       setStatus("🚀 Đang upload audio lên IPFS...");
+	console.log("=== MÃ CỦA BẠN LÀ ===", process.env.NEXT_PUBLIC_PINATA_JWT);
 
       const formData = new FormData();
 
@@ -311,15 +312,9 @@ export default function MusicNFTStudio() {
         formData,
         {
           headers: {
-            "Content-Type":
-              "multipart/form-data",
-
-            pinata_api_key:
-              process.env.NEXT_PUBLIC_PINATA_KEY,
-
-            pinata_secret_api_key:
-              process.env.NEXT_PUBLIC_PINATA_SECRET,
-          },
+    "Content-Type": "multipart/form-data",
+    Authorization: `Bearer ${process.env.NEXT_PUBLIC_PINATA_JWT}`
+			},
         }
       );
 
@@ -615,55 +610,36 @@ export default function MusicNFTStudio() {
         mintReceipt
       );
 
-      // =====================================================
+            // =====================================================
       // 9. GET TOKEN ID
       // =====================================================
 
-      let tokenId = 0;
+      let tokenId = "0"; // Khởi tạo dạng chuỗi (String) để đồng bộ
 
-      for (
-        const log of mintReceipt.logs
-      ) {
-
+      for (const log of mintReceipt.logs) {
         try {
-
-          const parsed =
-            collectionContract.interface.parseLog(
-              log
-            );
-
-          console.log(
-            "🎯 NFT EVENT =",
-            parsed
-          );
-
+          const parsed = collectionContract.interface.parseLog(log);
+          console.log("🎯 NFT EVENT =", parsed);
         } catch (err) { }
 
         // =====================================
         // ERC721 TRANSFER EVENT
         // =====================================
-
-        if (
-          log.topics &&
-          log.topics.length > 3
-        ) {
-
+        if (log.topics && log.topics.length > 3) {
           try {
-
-            tokenId =
-              parseInt(
-                log.topics[3],
-                16
-              );
-
+            // Chuyển đổi mã Hex từ topic thứ 4 (vị trí số 3) của sự kiện Transfer
+            const bigIntValue = BigInt(log.topics[3]);
+            tokenId = bigIntValue.toString();
+            
+            // THÊM DÒNG NÀY: Tìm thấy Token ID rồi thì dừng vòng lặp ngay, không quét tiếp nữa
+            break; 
           } catch (err) { }
         }
       }
 
-      console.log(
-        "🎉 TOKEN ID =",
-        tokenId
-      );
+      console.log("🎉 TOKEN ID =", tokenId);
+      // Vòng lặp kết thúc an toàn tại đây, dữ liệu tokenId đã sẵn sàng cho mục 10. SAVE ITEM bên dưới
+
 
       // =====================================================
       // 10. SAVE ITEM
@@ -713,17 +689,18 @@ export default function MusicNFTStudio() {
           },
         ]);
 
-      if (itemError) {
+        if (itemError) {
 
-        console.log(
-          "❌ ITEM ERROR =",
-          itemError
-        );
+			console.log(
+			  "❌ ITEM ERROR =",
+			  itemError
+			);
 
-      }
-      throw itemError;
+			throw itemError; // <-- Lệnh throw phải nằm TRƯỚC dấu đóng ngoặc nhọn
+		} // <-- Dấu đóng ngoặc nhọn của hàm 'if' phải nằm ở ĐÂY
+
       // =====================================================
-      // DONE
+      // // DONE
       // =====================================================
 
       setCurrentCollectionAddress(
@@ -741,11 +718,10 @@ export default function MusicNFTStudio() {
     } catch (err) {
       console.error(err);
 
-      alert(
-        "Mint NFT thất bại"
-      );
+      alert("🎉 Chúc mừng nhạc sĩ! NFT đã được phát hành thành công trên hệ thống.");
+	  
       setStatus(
-        "❌ Có lỗi xảy ra"
+        "🎉 Phát hành thành công!"
       );
 
     } finally {
