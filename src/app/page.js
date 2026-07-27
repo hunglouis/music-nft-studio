@@ -690,6 +690,31 @@ export default function MusicNFTStudio() {
         ]);
 
         if (itemError) {
+			console.log(
+			  "❌ ITEM ERROR =",
+			  itemError
+			);
+			throw itemError; // <-- Lệnh throw phải nằm TRƯỚC dấu đóng ngoặc nhọn
+		} // <-- Dấu đóng ngoặc nhọn của hàm 'if' phải nằm ở ĐÂY
+
+      // =====================================================
+      // // DONE
+      // =====================================================
+
+      setCurrentCollectionAddress(
+        collectionAddress
+      );
+
+      setStatus(
+        "🎉 NFT ĐÃ MINT THÀNH CÔNG"
+      );
+
+      alert(`🎉   NFT ĐÃ MINT THÀNH CÔNG    COLLECTION:    ${collectionName}    NFT:    ${nftData.name}    CONTRACT:    ${collectionAddress}    TOKEN ID:    ${tokenId}                `);
+      
+	  fetchNFTs();
+      fetchMyCollection();
+      fetchCollections();
+         if (itemError) {
 
 			console.log(
 			  "❌ ITEM ERROR =",
@@ -698,7 +723,8 @@ export default function MusicNFTStudio() {
 
 			throw itemError; // <-- Lệnh throw phải nằm TRƯỚC dấu đóng ngoặc nhọn
 		} // <-- Dấu đóng ngoặc nhọn của hàm 'if' phải nằm ở ĐÂY
-
+    
+   
       // =====================================================
       // // DONE
       // =====================================================
@@ -716,18 +742,15 @@ export default function MusicNFTStudio() {
       fetchMyCollection();
       fetchCollections();
     } catch (err) {
-      console.error(err);
-
-      alert("🎉 Chúc mừng nhạc sĩ! NFT đã được phát hành thành công trên hệ thống.");
-	  
-      setStatus(
-        "🎉 Phát hành thành công!"
-      );
-
+    // KHỐI CATCH NÀY BẮT BUỘC PHẢI BÁO LỖI THỰC TẾ ĐỂ BẠN BIẾT ĐƯỜNG XỬ LÝ
+    console.error(err);
+    alert("Hệ thống gặp sự cố trong quá trình xử lý. Vui lòng kiểm tra lại kết nối mạng và ví MetaMask.");
+    setStatus("❌ Có lỗi xảy ra");
     } finally {
       setLoading(false);
     }
   };
+    
   // ĐOẠN CODE TRONG ỨNG DỤNG MINT CŨ CỦA BẠN (Ví dụ sau khi lấy được link file gốc thành công)
   const fullAudioUrl = "https://pinata.cloud..."; // Link file gốc ứng dụng cũ vừa tự up xong
 
